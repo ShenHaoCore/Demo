@@ -1,0 +1,6 @@
+@Demo.ShortUrl.Api_HostAddress = http://localhost:5257
+
+GET {{Demo.ShortUrl.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,6 @@
+@Demo.ETag.Api_HostAddress = http://localhost:5012
+
+GET {{Demo.ETag.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

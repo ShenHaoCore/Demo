@@ -1,0 +1,6 @@
+@Demo.OptimisticLock.Api_HostAddress = http://localhost:5192
+
+GET {{Demo.OptimisticLock.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

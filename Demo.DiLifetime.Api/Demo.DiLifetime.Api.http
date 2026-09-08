@@ -1,0 +1,6 @@
+@Demo.DiLifetime.Api_HostAddress = http://localhost:5183
+
+GET {{Demo.DiLifetime.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

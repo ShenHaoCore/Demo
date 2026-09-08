@@ -1,0 +1,6 @@
+@Demo.CircuitBreaker.Api_HostAddress = http://localhost:5233
+
+GET {{Demo.CircuitBreaker.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
