@@ -9,8 +9,11 @@ builder.Services.AddSingleton<UserStore>();
 
 var app = builder.Build();
 
-app.MapOpenApi();
-app.MapScalarApiReference();
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 app.MapGet("/health", () => Results.Ok(new { status = "健康", service = "Demo.PasswordAuth.Api" }));
 
@@ -36,7 +39,32 @@ app.MapPost("/api/login", (LoginRequest request, UserStore store) =>
     return Results.Ok(new { message = "登录成功", sessionToken = token });
 });
 
+app.MapGet("/api/me", (HttpRequest request, UserStore store) =>
+{
+    if (!TryGetBearerToken(request, out var token) ||
+        !store.TryGetSession(token!, out var username))
+    {
+        return Results.Unauthorized();
+    }
+
+    return Results.Ok(new { username, message = "会话有效" });
+});
+
 app.Run();
+
+static bool TryGetBearerToken(HttpRequest request, out string? token)
+{
+    token = null;
+    var header = request.Headers.Authorization.ToString();
+    if (string.IsNullOrWhiteSpace(header) ||
+        !header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+    {
+        return false;
+    }
+
+    token = header["Bearer ".Length..].Trim();
+    return !string.IsNullOrEmpty(token);
+}
 
 record RegisterRequest(string Username, string Password);
 record LoginRequest(string Username, string Password);
@@ -47,6 +75,8 @@ sealed class UserStore
 {
     private readonly ConcurrentDictionary<string, UserRecord> _users =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, string> _sessions =
+        new(StringComparer.Ordinal); // token -> username
 
     public bool TryRegister(string username, string password)
     {
@@ -66,8 +96,12 @@ sealed class UserStore
             return false;
 
         token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        _sessions[token] = username;
         return true;
     }
+
+    public bool TryGetSession(string token, out string? username) =>
+        _sessions.TryGetValue(token, out username);
 
     private static byte[] HashPassword(string password, byte[] salt)
     {

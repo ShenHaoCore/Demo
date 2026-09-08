@@ -5,6 +5,7 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton<UnstableDownstream>();
+builder.Services.AddSingleton<ResiliencePipeline<UnstableResult>>(CreateRetryPipeline);
 
 var app = builder.Build();
 
@@ -45,36 +46,16 @@ app.MapPost("/api/unstable/config", (UnstableConfigRequest request, UnstableDown
     return Results.Ok(new { failureRate = downstream.FailureRate, message = "失败率已更新" });
 });
 
-app.MapGet("/api/proxy", async (UnstableDownstream downstream) =>
+app.MapGet("/api/proxy", async (UnstableDownstream downstream, ResiliencePipeline<UnstableResult> pipeline) =>
 {
     var attempts = 0;
     UnstableResult? lastResult = null;
     string? error = null;
     var succeeded = false;
 
-    var pipeline = new ResiliencePipelineBuilder<UnstableResult>()
-        .AddRetry(new RetryStrategyOptions<UnstableResult>
-        {
-            MaxRetryAttempts = 4,
-            Delay = TimeSpan.FromMilliseconds(200),
-            BackoffType = DelayBackoffType.Exponential,
-            UseJitter = true,
-            ShouldHandle = new PredicateBuilder<UnstableResult>()
-                .HandleResult(r => !r.Success),
-            OnRetry = args =>
-            {
-                app.Logger.LogWarning(
-                    "代理指数退避重试：第 {Attempt} 次失败后等待 {Delay}ms",
-                    args.AttemptNumber + 1,
-                    args.RetryDelay.TotalMilliseconds);
-                return ValueTask.CompletedTask;
-            }
-        })
-        .Build();
-
     try
     {
-        lastResult = await pipeline.ExecuteAsync(ct =>
+        lastResult = await pipeline.ExecuteAsync(_ =>
         {
             attempts++;
             return ValueTask.FromResult(downstream.Invoke());
@@ -103,6 +84,30 @@ app.MapGet("/api/proxy", async (UnstableDownstream downstream) =>
 });
 
 app.Run();
+
+static ResiliencePipeline<UnstableResult> CreateRetryPipeline(IServiceProvider sp)
+{
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("RetryProxy");
+    return new ResiliencePipelineBuilder<UnstableResult>()
+        .AddRetry(new RetryStrategyOptions<UnstableResult>
+        {
+            MaxRetryAttempts = 4,
+            Delay = TimeSpan.FromMilliseconds(200),
+            BackoffType = DelayBackoffType.Exponential,
+            UseJitter = true,
+            ShouldHandle = new PredicateBuilder<UnstableResult>()
+                .HandleResult(r => !r.Success),
+            OnRetry = args =>
+            {
+                logger.LogWarning(
+                    "代理指数退避重试：第 {Attempt} 次失败后等待 {Delay}ms",
+                    args.AttemptNumber + 1,
+                    args.RetryDelay.TotalMilliseconds);
+                return ValueTask.CompletedTask;
+            }
+        })
+        .Build();
+}
 
 sealed class UnstableDownstream
 {

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -60,6 +61,7 @@ record Order(Guid Id, string Product, int Quantity, DateTimeOffset CreatedAt);
 enum OutboxStatus
 {
     Pending,
+    Publishing,
     Published
 }
 
@@ -88,11 +90,12 @@ sealed class OutboxStore
             var now = DateTimeOffset.UtcNow;
 
             var order = new Order(orderId, product, quantity, now);
+            var payload = JsonSerializer.Serialize(new { orderId, product, quantity });
             var message = new OutboxMessage(
                 messageId,
                 orderId,
                 "OrderCreated",
-                $$"""{"orderId":"{{orderId}}","product":"{{product}}","quantity":{{quantity}}}""",
+                payload,
                 OutboxStatus.Pending,
                 now,
                 null);
@@ -118,15 +121,23 @@ sealed class OutboxStore
     public IReadOnlyList<Order> GetOrders() =>
         _orders.Values.OrderByDescending(o => o.CreatedAt).ToList();
 
+    /// <summary>真正 claim：Pending → Publishing，避免多消费者重复投递。</summary>
     public IReadOnlyList<OutboxMessage> ClaimPending(int take)
     {
         lock (_gate)
         {
-            return _messages.Values
-                .Where(m => m.Status == OutboxStatus.Pending)
-                .OrderBy(m => m.CreatedAt)
-                .Take(take)
-                .ToList();
+            var claimed = new List<OutboxMessage>();
+            foreach (var message in _messages.Values
+                         .Where(m => m.Status == OutboxStatus.Pending)
+                         .OrderBy(m => m.CreatedAt)
+                         .Take(take))
+            {
+                var publishing = message with { Status = OutboxStatus.Publishing };
+                _messages[message.Id] = publishing;
+                claimed.Add(publishing);
+            }
+
+            return claimed;
         }
     }
 
@@ -134,7 +145,7 @@ sealed class OutboxStore
     {
         lock (_gate)
         {
-            if (!_messages.TryGetValue(id, out var current) || current.Status != OutboxStatus.Pending)
+            if (!_messages.TryGetValue(id, out var current) || current.Status != OutboxStatus.Publishing)
             {
                 return false;
             }
@@ -162,7 +173,7 @@ sealed class OutboxPublisherService(OutboxStore store, ILogger<OutboxPublisherSe
                 var pending = store.ClaimPending(20);
                 foreach (var message in pending)
                 {
-                    // 模拟投递到消息中间件
+                    // 模拟投递到消息中间件（已 claim 为 Publishing）
                     logger.LogInformation("发布 outbox 消息 {MessageId}，订单 {OrderId}", message.Id, message.OrderId);
                     store.MarkPublished(message.Id);
                 }

@@ -8,8 +8,11 @@ builder.Services.AddSingleton<QrLoginStore>();
 
 var app = builder.Build();
 
-app.MapOpenApi();
-app.MapScalarApiReference();
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 app.MapGet("/health", () => Results.Ok(new { status = "健康", service = "Demo.QrLogin.Api" }));
 

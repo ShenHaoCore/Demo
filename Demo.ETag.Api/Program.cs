@@ -34,29 +34,6 @@ app.MapGet("/api/documents/{id}", (string id, HttpResponse response) =>
 
 app.MapPut("/api/documents/{id}", async (string id, HttpRequest request, HttpResponse response) =>
 {
-    if (!documents.TryGetValue(id, out var existing))
-    {
-        return Results.NotFound(new { message = $"未找到文档：{id}" });
-    }
-
-    var ifMatch = request.Headers.IfMatch.ToString();
-    if (string.IsNullOrWhiteSpace(ifMatch))
-    {
-        return Results.BadRequest(new { message = "PUT 请求必须提供 If-Match 请求头" });
-    }
-
-    var currentETag = ComputeETag(existing);
-    var expected = NormalizeETag(ifMatch);
-    if (!string.Equals(expected, currentETag, StringComparison.Ordinal))
-    {
-        app.Logger.LogWarning(
-            "文档 {DocumentId} 更新冲突：If-Match={IfMatch}，当前 ETag={ETag}",
-            id, ifMatch, currentETag);
-        return Results.Json(
-            new { message = "文档已被修改，请使用最新 ETag 重试", currentETag },
-            statusCode: StatusCodes.Status412PreconditionFailed);
-    }
-
     UpdateDocumentRequest? body;
     try
     {
@@ -72,18 +49,48 @@ app.MapPut("/api/documents/{id}", async (string id, HttpRequest request, HttpRes
         return Results.BadRequest(new { message = "标题不能为空，内容字段必须提供" });
     }
 
-    var updated = existing with
+    var ifMatch = request.Headers.IfMatch.ToString();
+    if (string.IsNullOrWhiteSpace(ifMatch))
     {
-        Title = body.Title.Trim(),
-        Content = body.Content,
-        UpdatedAt = DateTimeOffset.UtcNow
-    };
+        return Results.BadRequest(new { message = "PUT 请求必须提供 If-Match 请求头" });
+    }
 
-    documents[id] = updated;
-    var newETag = ComputeETag(updated);
-    response.Headers.ETag = newETag;
-    app.Logger.LogInformation("已更新文档 {DocumentId}，新 ETag={ETag}", id, newETag);
-    return Results.Ok(updated);
+    var expected = NormalizeETag(ifMatch);
+
+    // CAS：校验 If-Match 与写入必须基于同一快照，避免双请求都返回 200
+    while (true)
+    {
+        if (!documents.TryGetValue(id, out var existing))
+        {
+            return Results.NotFound(new { message = $"未找到文档：{id}" });
+        }
+
+        var currentETag = ComputeETag(existing);
+        if (!string.Equals(expected, currentETag, StringComparison.Ordinal))
+        {
+            app.Logger.LogWarning(
+                "文档 {DocumentId} 更新冲突：If-Match={IfMatch}，当前 ETag={ETag}",
+                id, ifMatch, currentETag);
+            return Results.Json(
+                new { message = "文档已被修改，请使用最新 ETag 重试", currentETag },
+                statusCode: StatusCodes.Status412PreconditionFailed);
+        }
+
+        var updated = existing with
+        {
+            Title = body.Title.Trim(),
+            Content = body.Content,
+            UpdatedAt = DateTimeOffset.UtcNow
+        };
+
+        if (documents.TryUpdate(id, updated, existing))
+        {
+            var newETag = ComputeETag(updated);
+            response.Headers.ETag = newETag;
+            app.Logger.LogInformation("已更新文档 {DocumentId}，新 ETag={ETag}", id, newETag);
+            return Results.Ok(updated);
+        }
+    }
 });
 
 app.Run();

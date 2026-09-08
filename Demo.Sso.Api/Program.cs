@@ -8,8 +8,11 @@ builder.Services.AddSingleton<SsoStore>();
 
 var app = builder.Build();
 
-app.MapOpenApi();
-app.MapScalarApiReference();
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 app.MapGet("/health", () => Results.Ok(new { status = "健康", service = "Demo.Sso.Api" }));
 
@@ -123,33 +126,39 @@ sealed class SsoStore
         username = null;
         error = null;
 
-        if (!_tickets.TryGetValue(ticket, out var entry))
+        while (true)
         {
-            error = "ticket 无效";
-            return false;
-        }
+            if (!_tickets.TryGetValue(ticket, out var entry))
+            {
+                error = "ticket 无效";
+                return false;
+            }
 
-        if (entry.Consumed)
-        {
-            error = "ticket 已被消费（一次性）";
-            return false;
-        }
+            if (entry.Consumed)
+            {
+                error = "ticket 已被消费（一次性）";
+                return false;
+            }
 
-        if (entry.ExpiresAtUtc < DateTime.UtcNow)
-        {
-            error = "ticket 已过期";
-            return false;
-        }
+            if (entry.ExpiresAtUtc < DateTime.UtcNow)
+            {
+                error = "ticket 已过期";
+                return false;
+            }
 
-        if (!string.Equals(entry.Service, service, StringComparison.OrdinalIgnoreCase))
-        {
-            error = "service 与签发时不一致";
-            return false;
-        }
+            if (!string.Equals(entry.Service, service, StringComparison.OrdinalIgnoreCase))
+            {
+                error = "service 与签发时不一致";
+                return false;
+            }
 
-        _tickets[ticket] = entry with { Consumed = true };
-        username = entry.Username;
-        return true;
+            // CAS 消费：仅一人能将 Consumed 从 false 改为 true
+            if (_tickets.TryUpdate(ticket, entry with { Consumed = true }, entry))
+            {
+                username = entry.Username;
+                return true;
+            }
+        }
     }
 
     private sealed record TicketEntry(string Username, string Service, DateTime ExpiresAtUtc, bool Consumed);

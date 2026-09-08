@@ -91,7 +91,7 @@ app.MapPost("/api/payments/notify", async (HttpRequest http, PaymentStore store,
     var amountText = notify.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture);
     var payload = $"{notify.PaymentId:D}|{notify.NotifyId}|{amountText}|{notify.Status}";
     var expected = ComputeHmac(payload, options.NotifySecret);
-    if (!string.Equals(expected, notify.Signature.Trim(), StringComparison.OrdinalIgnoreCase))
+    if (!FixedTimeEqualsHex(expected, notify.Signature))
     {
         return Results.Json(new { message = "HMAC 签名校验失败" }, statusCode: StatusCodes.Status401Unauthorized);
     }
@@ -175,6 +175,33 @@ static string ComputeHmac(string payload, string secret)
     return Convert.ToHexString(hash);
 }
 
+static bool FixedTimeEqualsHex(string expectedHex, string? actualHex)
+{
+    if (string.IsNullOrWhiteSpace(actualHex))
+    {
+        return false;
+    }
+
+    byte[] expected;
+    byte[] actual;
+    try
+    {
+        expected = Convert.FromHexString(expectedHex);
+        actual = Convert.FromHexString(actualHex.Trim());
+    }
+    catch (FormatException)
+    {
+        return false;
+    }
+
+    if (expected.Length != actual.Length)
+    {
+        return false;
+    }
+
+    return CryptographicOperations.FixedTimeEquals(expected, actual);
+}
+
 static class JsonDefaults
 {
     public static readonly JsonSerializerOptions Options = new()
@@ -209,27 +236,36 @@ sealed class PaymentStore
 
     public NotifyResult TryApplyNotify(Guid paymentId, string notifyId, decimal amount)
     {
-        // 幂等：同一 notifyId 只入账一次
+        // 幂等：先占位 notifyId，再 CAS 入账，避免「已 Paid 却返回 Duplicate」的错账窗口
         if (_notifyIndex.TryGetValue(notifyId, out var existingPaymentId))
         {
             _payments.TryGetValue(existingPaymentId, out var existing);
             return new NotifyResult(NotifyKind.Duplicate, existing);
         }
 
+        if (!_notifyIndex.TryAdd(notifyId, paymentId))
+        {
+            _payments.TryGetValue(_notifyIndex[notifyId], out var dup);
+            return new NotifyResult(NotifyKind.Duplicate, dup);
+        }
+
         while (true)
         {
             if (!_payments.TryGetValue(paymentId, out var current))
             {
+                _notifyIndex.TryRemove(notifyId, out _);
                 return new NotifyResult(NotifyKind.NotFound, null);
             }
 
             if (current.Amount != amount)
             {
+                _notifyIndex.TryRemove(notifyId, out _);
                 return new NotifyResult(NotifyKind.AmountMismatch, current);
             }
 
             if (current.Status == PaymentStatus.Paid)
             {
+                _notifyIndex.TryRemove(notifyId, out _);
                 return new NotifyResult(NotifyKind.AlreadyPaidOtherNotify, current);
             }
 
@@ -240,19 +276,10 @@ sealed class PaymentStore
                 LastNotifyId = notifyId
             };
 
-            if (!_payments.TryUpdate(paymentId, updated, current))
+            if (_payments.TryUpdate(paymentId, updated, current))
             {
-                continue;
+                return new NotifyResult(NotifyKind.Applied, updated);
             }
-
-            if (!_notifyIndex.TryAdd(notifyId, paymentId))
-            {
-                // 极端并发：另一请求已用同 notifyId；回滚本单状态需谨慎，这里以 notify 索引为准
-                _payments.TryGetValue(_notifyIndex[notifyId], out var dup);
-                return new NotifyResult(NotifyKind.Duplicate, dup);
-            }
-
-            return new NotifyResult(NotifyKind.Applied, updated);
         }
     }
 }

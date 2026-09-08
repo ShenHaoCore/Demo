@@ -59,6 +59,7 @@ app.MapPost("/api/orders", (CreateOrderRequest request) =>
     return Results.Created($"/api/orders/{order.Id}", order);
 });
 
+// PUT 直接覆盖（last-write-wins）。并发控制见 Demo.ETag.Api / Demo.OptimisticLock.Api
 app.MapPut("/api/orders/{id:guid}", (Guid id, UpdateOrderRequest request) =>
 {
     if (!orders.TryGetValue(id, out var existing))

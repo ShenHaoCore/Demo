@@ -59,7 +59,7 @@ record BrokerMessage(
     MessageStatus Status,
     int AttemptCount,
     int FailUntilAttempt,
-    int MaxRetries,
+    int MaxAttempts,
     DateTimeOffset EnqueuedAt,
     DateTimeOffset? LastAttemptAt,
     DateTimeOffset? CompletedAt,
@@ -67,7 +67,8 @@ record BrokerMessage(
 
 sealed class InMemoryBroker
 {
-    public const int DefaultMaxRetries = 3;
+    /// <summary>含首次在内的最大尝试次数（即最多重试 MaxAttempts-1 次）。</summary>
+    public const int DefaultMaxAttempts = 3;
 
     private readonly object _gate = new();
     private readonly ConcurrentQueue<Guid> _ready = new();
@@ -82,7 +83,7 @@ sealed class InMemoryBroker
             MessageStatus.Queued,
             AttemptCount: 0,
             FailUntilAttempt: Math.Max(0, failUntilAttempt),
-            MaxRetries: DefaultMaxRetries,
+            MaxAttempts: DefaultMaxAttempts,
             DateTimeOffset.UtcNow,
             null,
             null,
@@ -152,7 +153,8 @@ sealed class InMemoryBroker
                 return;
             }
 
-            if (current.AttemptCount >= current.MaxRetries)
+            // AttemptCount 已含本次失败；达到 MaxAttempts 则进 DLQ（不再重试）
+            if (current.AttemptCount >= current.MaxAttempts)
             {
                 var dead = current with
                 {
@@ -187,7 +189,14 @@ sealed class InMemoryBroker
             .OrderByDescending(m => m.CompletedAt)
             .ToList();
 
-        return new { readyOrProcessing = items, succeeded, maxRetries = DefaultMaxRetries };
+        return new
+        {
+            readyOrProcessing = items,
+            succeeded,
+            maxAttempts = DefaultMaxAttempts,
+            maxRetries = DefaultMaxAttempts - 1,
+            note = $"最多尝试 {DefaultMaxAttempts} 次（含首次，即最多重试 {DefaultMaxAttempts - 1} 次）"
+        };
     }
 
     public IReadOnlyList<BrokerMessage> GetDlqSnapshot() =>
@@ -198,7 +207,9 @@ sealed class MessageConsumerService(InMemoryBroker broker, ILogger<MessageConsum
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("内存 MQ 消费者已启动（最大重试 {MaxRetries} 次）", InMemoryBroker.DefaultMaxRetries);
+        logger.LogInformation(
+            "内存 MQ 消费者已启动（最多尝试 {MaxAttempts} 次，含首次）",
+            InMemoryBroker.DefaultMaxAttempts);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -210,16 +221,16 @@ sealed class MessageConsumerService(InMemoryBroker broker, ILogger<MessageConsum
                     continue;
                 }
 
-                // 手动 ACK 语义：处理成功 AckSuccess，失败 AckFailure（超限进 DLQ）
+                // 手动 ACK 语义：处理成功 AckSuccess，失败 AckFailure（达 MaxAttempts 进 DLQ）
                 if (message.AttemptCount <= message.FailUntilAttempt)
                 {
-                    var error = $"模拟处理失败（第 {message.AttemptCount} 次，failUntilAttempt={message.FailUntilAttempt}）";
+                    var error = $"模拟处理失败（第 {message.AttemptCount}/{message.MaxAttempts} 次，failUntilAttempt={message.FailUntilAttempt}）";
                     logger.LogWarning("消息 {Id} {Error}", message.Id, error);
                     broker.AckFailure(message.Id, error);
                 }
                 else
                 {
-                    logger.LogInformation("消息 {Id} 处理成功（第 {Attempt} 次）", message.Id, message.AttemptCount);
+                    logger.LogInformation("消息 {Id} 处理成功（第 {Attempt}/{Max} 次）", message.Id, message.AttemptCount, message.MaxAttempts);
                     broker.AckSuccess(message.Id);
                 }
             }

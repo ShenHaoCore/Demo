@@ -8,8 +8,11 @@ builder.Services.AddTransient<ITransientDemoService, TransientDemoService>();
 
 var app = builder.Build();
 
-app.MapOpenApi();
-app.MapScalarApiReference();
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 app.MapGet("/health", () => Results.Ok(new { status = "健康", service = "Demo.DiLifetime.Api" }));
 

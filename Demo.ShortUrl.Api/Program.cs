@@ -115,11 +115,10 @@ sealed class ShortUrlStore
     private static string GenerateCode(int length)
     {
         Span<char> chars = stackalloc char[length];
-        Span<byte> bytes = stackalloc byte[length];
-        RandomNumberGenerator.Fill(bytes);
         for (var i = 0; i < length; i++)
         {
-            chars[i] = Alphabet[bytes[i] % Alphabet.Length];
+            // GetInt32 均匀分布，避免 bytes[i] % Alphabet.Length 的 modulo bias
+            chars[i] = Alphabet[RandomNumberGenerator.GetInt32(Alphabet.Length)];
         }
 
         return new string(chars);

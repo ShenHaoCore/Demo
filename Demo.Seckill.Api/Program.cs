@@ -139,6 +139,7 @@ sealed class SeckillStore
         }
 
         // 原子预扣：Interlocked 保证不超卖
+        // 本 Demo 聚焦预扣+异步建单；「一人一单」未实现，生产需按 activityId+userId 去重
         while (true)
         {
             var current = Volatile.Read(ref activity.Remaining);

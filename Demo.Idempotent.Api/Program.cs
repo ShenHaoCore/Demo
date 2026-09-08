@@ -91,6 +91,7 @@ static string ComputeHash(string content)
 
 sealed class IdempotencyStore
 {
+    // Demo 简化：无 TTL / 无淘汰。生产应对 Idempotency-Key 设过期并定期清理 _store/_keyLocks。
     private readonly ConcurrentDictionary<string, IdempotencySnapshot> _store = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, object> _keyLocks = new(StringComparer.Ordinal);
 

@@ -1,6 +1,79 @@
-@Demo.Versioning.Api_HostAddress = http://localhost:5163
+@Demo.Versioning.Api_HostAddress = http://localhost:5102
 
-GET {{Demo.Versioning.Api_HostAddress}}/weatherforecast/
+### URL v1 - 列表
+GET {{Demo.Versioning.Api_HostAddress}}/api/v1/products
+Accept: application/json
+
+### URL v1 - 详情
+GET {{Demo.Versioning.Api_HostAddress}}/api/v1/products/11111111-1111-1111-1111-111111111111
+Accept: application/json
+
+### URL v1 - 创建
+POST {{Demo.Versioning.Api_HostAddress}}/api/v1/products
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "显示器",
+  "price": 1299
+}
+
+### URL v2 - 列表
+GET {{Demo.Versioning.Api_HostAddress}}/api/v2/products
+Accept: application/json
+
+### URL v2 - 详情
+GET {{Demo.Versioning.Api_HostAddress}}/api/v2/products/11111111-1111-1111-1111-111111111111
+Accept: application/json
+
+### URL v2 - 创建
+POST {{Demo.Versioning.Api_HostAddress}}/api/v2/products
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "显示器",
+  "price": 1299,
+  "description": "27 寸 2K，适合编码"
+}
+
+### Header v1
+GET {{Demo.Versioning.Api_HostAddress}}/api/products
+Accept: application/json
+api-version: 1.0
+
+###
+POST {{Demo.Versioning.Api_HostAddress}}/api/products
+Content-Type: application/json
+Accept: application/json
+api-version: 1.0
+
+{
+  "name": "耳机",
+  "price": 299
+}
+
+### Header v2
+GET {{Demo.Versioning.Api_HostAddress}}/api/products
+Accept: application/json
+api-version: 2.0
+
+###
+POST {{Demo.Versioning.Api_HostAddress}}/api/products
+Content-Type: application/json
+Accept: application/json
+api-version: 2.0
+
+{
+  "name": "耳机",
+  "price": 299,
+  "description": "降噪入耳式"
+}
+
+### Query v2
+GET {{Demo.Versioning.Api_HostAddress}}/api/products?api-version=2.0
 Accept: application/json
 
 ###
+GET {{Demo.Versioning.Api_HostAddress}}/health
+Accept: application/json

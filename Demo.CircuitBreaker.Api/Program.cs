@@ -126,17 +126,20 @@ sealed class SimpleCircuitBreaker
     private readonly object _sync = new();
     private readonly int _failureThreshold;
     private readonly TimeSpan _openDuration;
+    private readonly int _halfOpenMaxProbes;
     private BreakerState _state = BreakerState.Closed;
     private int _consecutiveFailures;
     private DateTimeOffset _openedAt;
     private int _halfOpenSuccesses;
+    private int _halfOpenInFlight;
     private int _totalCalls;
     private int _rejectedCalls;
 
-    public SimpleCircuitBreaker(int failureThreshold = 3, int openSeconds = 10)
+    public SimpleCircuitBreaker(int failureThreshold = 3, int openSeconds = 10, int halfOpenMaxProbes = 1)
     {
         _failureThreshold = failureThreshold;
         _openDuration = TimeSpan.FromSeconds(openSeconds);
+        _halfOpenMaxProbes = Math.Max(1, halfOpenMaxProbes);
     }
 
     public async Task<T> ExecuteAsync<T>(Func<Task<T>> action)
@@ -150,6 +153,19 @@ sealed class SimpleCircuitBreaker
             {
                 _rejectedCalls++;
                 throw new CircuitOpenException($"熔断器处于 Open 状态，请约 {_openDuration.TotalSeconds} 秒后再试");
+            }
+
+            // Half-Open：限制并发探测数（经典实现常为 1）
+            if (_state == BreakerState.HalfOpen)
+            {
+                if (_halfOpenInFlight >= _halfOpenMaxProbes)
+                {
+                    _rejectedCalls++;
+                    throw new CircuitOpenException(
+                        $"熔断器处于 HalfOpen，探测名额已满（最多 {_halfOpenMaxProbes} 个并发试探）");
+                }
+
+                _halfOpenInFlight++;
             }
         }
 
@@ -178,6 +194,8 @@ sealed class SimpleCircuitBreaker
                 failureThreshold = _failureThreshold,
                 openDurationSeconds = _openDuration.TotalSeconds,
                 openedAt = _state == BreakerState.Closed ? (DateTimeOffset?)null : _openedAt,
+                halfOpenMaxProbes = _halfOpenMaxProbes,
+                halfOpenInFlight = _halfOpenInFlight,
                 halfOpenSuccesses = _halfOpenSuccesses,
                 totalCalls = _totalCalls,
                 rejectedCalls = _rejectedCalls,
@@ -185,7 +203,7 @@ sealed class SimpleCircuitBreaker
                 {
                     BreakerState.Closed => "闭合：正常放行",
                     BreakerState.Open => "打开：拒绝调用",
-                    BreakerState.HalfOpen => "半开：允许试探",
+                    BreakerState.HalfOpen => $"半开：最多 {_halfOpenMaxProbes} 个并发试探",
                     _ => "未知状态"
                 }
             };
@@ -199,6 +217,7 @@ sealed class SimpleCircuitBreaker
             _state = BreakerState.Closed;
             _consecutiveFailures = 0;
             _halfOpenSuccesses = 0;
+            _halfOpenInFlight = 0;
             _openedAt = default;
         }
     }
@@ -210,11 +229,13 @@ sealed class SimpleCircuitBreaker
             _consecutiveFailures = 0;
             if (_state == BreakerState.HalfOpen)
             {
+                _halfOpenInFlight = Math.Max(0, _halfOpenInFlight - 1);
                 _halfOpenSuccesses++;
-                if (_halfOpenSuccesses >= 1)
+                if (_halfOpenSuccesses >= _halfOpenMaxProbes)
                 {
                     _state = BreakerState.Closed;
                     _halfOpenSuccesses = 0;
+                    _halfOpenInFlight = 0;
                 }
             }
         }
@@ -224,12 +245,18 @@ sealed class SimpleCircuitBreaker
     {
         lock (_sync)
         {
+            if (_state == BreakerState.HalfOpen)
+            {
+                _halfOpenInFlight = Math.Max(0, _halfOpenInFlight - 1);
+            }
+
             _consecutiveFailures++;
             if (_state == BreakerState.HalfOpen || _consecutiveFailures >= _failureThreshold)
             {
                 _state = BreakerState.Open;
                 _openedAt = DateTimeOffset.UtcNow;
                 _halfOpenSuccesses = 0;
+                _halfOpenInFlight = 0;
             }
         }
     }
@@ -240,6 +267,7 @@ sealed class SimpleCircuitBreaker
         {
             _state = BreakerState.HalfOpen;
             _halfOpenSuccesses = 0;
+            _halfOpenInFlight = 0;
         }
     }
 }

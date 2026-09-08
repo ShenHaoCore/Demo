@@ -91,7 +91,7 @@ app.Run();
 sealed class ProductStore
 {
     private readonly ConcurrentDictionary<int, Product> _products = new();
-    private int _nextId = 3;
+    private int _nextId = 2;
 
     public ProductStore()
     {
