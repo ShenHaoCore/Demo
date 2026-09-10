@@ -1,4 +1,5 @@
-using Demo.Idempotent.Api.Application;
+using Demo.Idempotent.Api.Application.Idempotency;
+using Demo.Idempotent.Api.Application.Orders;
 using Demo.Idempotent.Api.Dtos;
 using Demo.Idempotent.Api.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -28,34 +29,34 @@ public sealed class OrdersController(IOrderAppService service) : ControllerBase
     public async Task<IActionResult> CreateAsync([FromBody] CreateOrderDto input, CancellationToken cancellationToken)
     {
         if (!IdempotentAttribute.TryGetContext(HttpContext, out var key, out var bodyHash)) { return BadRequest(new { message = "幂等协议未就绪（缺少 Key 或 BodyHash）" }); }
-        var outcome = await service.CreateAsync(input, key, bodyHash, cancellationToken);
-        return ToActionResult(outcome, key);
+        var result = await service.CreateAsync(input, key, bodyHash, cancellationToken);
+        return ToActionResult(result, key);
     }
 
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="outcome"></param>
+    /// <param name="result"></param>
     /// <param name="key"></param>
     /// <returns></returns>
-    private IActionResult ToActionResult(CreateOrderOutcome outcome, string key) => outcome switch
+    private IActionResult ToActionResult(CreateOrderResult result, string key) => result switch
     {
-        CreateOrderSuccess success => Created(success.Location, success.Order),
-        CreateOrderReplay replay => Replay(replay.Record),
-        CreateOrderConflict conflict => Conflict(new { message = conflict.Message, idempotencyKey = key }),
-        CreateOrderInvalid invalid => BadRequest(new { message = invalid.Message }),
+        CreateOrderSuccessResult success => Created(success.Location, success.Order),
+        CreateOrderReplayResult replay => Replay(replay.Snapshot),
+        CreateOrderConflictResult conflict => Conflict(new { message = conflict.Message, idempotencyKey = key }),
+        CreateOrderInvalidResult invalid => BadRequest(new { message = invalid.Message }),
         _ => StatusCode(StatusCodes.Status500InternalServerError)
     };
 
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="record"></param>
+    /// <param name="snapshot"></param>
     /// <returns></returns>
-    private IActionResult Replay(IdempotencyRecord record)
+    private IActionResult Replay(IdempotencySnapshot snapshot)
     {
-        object? body = string.IsNullOrEmpty(record.ResponseBodyJson) ? null : JsonSerializer.Deserialize<JsonElement>(record.ResponseBodyJson);
-        if (!string.IsNullOrEmpty(record.Location)) { Response.Headers.Location = record.Location; }
-        return StatusCode(record.StatusCode, body);
+        object? body = string.IsNullOrEmpty(snapshot.ResponseBodyJson) ? null : JsonSerializer.Deserialize<JsonElement>(snapshot.ResponseBodyJson);
+        if (!string.IsNullOrEmpty(snapshot.Location)) { Response.Headers.Location = snapshot.Location; }
+        return StatusCode(snapshot.StatusCode, body);
     }
 }

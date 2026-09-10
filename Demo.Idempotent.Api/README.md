@@ -37,32 +37,33 @@ dotnet run
 
 默认 TTL：`24:00:00`（`appsettings.json` → `Idempotency:Ttl`）。
 
-## 架构
+## 架构（ABP 风格）
 
 ```
-[Idempotent] Attribute → 校验 Key、规范化 Body 哈希、写入上下文
-OrdersController       → Outcome → HTTP
-OrderAppService        → 唯一业务决策 + 事务边界
-IIdempotencyStore      → 端口（Application）
-DbIdempotencyStore     → EF 实现（Data，共享 AppDbContext）
+[Idempotent] Attribute          → 协议（Key / BodyHash）
+OrdersController                → CreateOrderResult → HTTP
+Application/Orders              → IOrderAppService / OrderAppService
+Application/Idempotency         → IIdempotencyRepository + Snapshot/Check*
+Data                            → IdempotentDbContext / IdempotencyRepository
 ```
 
 要点：
 
 1. **Attribute 只管协议**，不做回放/落库。
 2. **AppService 先只读查找**；命中则直接 Replay/Conflict，不开写事务。
-3. **Miss 时单事务**：清理过期幂等行（若有）+ 写订单 + 写幂等快照，一次 `SaveChanges`。
-4. **权威在 DB**，不用 Redis 做占用（Redis 无法与 SQL 同事务）；生产可用 Redis 仅作回放缓存。
+3. **Miss 时一次 SaveChanges**：清理过期幂等行（若有）+ 写订单 + 写幂等快照（EF 工作单元，无需手写事务）。
+4. **权威在 DB**；Redis 不能与 SQL 同事务，仅适合回放缓存。
 
-目录约定（ABP 风格）：
+目录约定：
 
 | 目录 | 职责 |
 |------|------|
-| `Controllers/` | HTTP |
-| `Application/` | 应用服务与端口 |
-| `Data/` | DbContext、Store 实现 |
+| `Controllers/` | HTTP API |
+| `Application/Orders/` | 订单应用服务与 Result |
+| `Application/Idempotency/` | 幂等仓储端口与检查模型 |
+| `Data/` | DbContext、仓储实现 |
 | `Entities/` / `Dtos/` | 实体与 DTO |
-| `Filters/` | `[Idempotent]` 与 Body 哈希 |
+| `Filters/` | `[Idempotent]`、Body 哈希 |
 | `Options/` | `IdempotencyOptions` |
 
 ## 面试可讲
@@ -72,4 +73,4 @@ DbIdempotencyStore     → EF 实现（Data，共享 AppDbContext）
 - 为何下单场景优先 **DB 同事务**，而不是 Redis SET NX
 - TTL 与「历史订单是否删除」的语义区别
 - 并发下唯一约束 + 回查回放
-
+- Repository 与 AppService 的职责边界（对齐 ABP）

@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Demo.Idempotent.Api.Data;
 
-/// <summary>订单 + 幂等同库，便于单事务提交。</summary>
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+/// <summary>本模块 DbContext：订单 + 幂等同库，便于单事务提交。</summary>
+public sealed class IdempotentDbContext(DbContextOptions<IdempotentDbContext> options) : DbContext(options)
 {
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<IdempotencyEntry> IdempotencyEntries => Set<IdempotencyEntry>();
@@ -37,4 +37,3 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         });
     }
 }
-
