@@ -1,0 +1,10 @@
+using Microsoft.AspNetCore.Mvc;
+
+namespace Demo.DiLifetime.Api.Controllers;
+
+[ApiController]
+public sealed class HealthController : ControllerBase
+{
+    [HttpGet("/health")]
+    public IActionResult Get() => Ok(new { status = "健康", service = "Demo.DiLifetime.Api" });
+}

@@ -4,6 +4,7 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
+builder.Services.AddControllers();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -61,34 +62,5 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRateLimiter();
-
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
-
-app.MapGet("/api/requests/unlimited", () =>
-{
-    return Results.Ok(new
-    {
-        message = "无限制接口调用成功",
-        timestamp = DateTimeOffset.UtcNow
-    });
-});
-
-app.MapGet("/api/requests/fixed", () =>
-{
-    return Results.Ok(new
-    {
-        message = "固定窗口限流接口调用成功（10 秒内最多 5 次）",
-        timestamp = DateTimeOffset.UtcNow
-    });
-}).RequireRateLimiting("fixed");
-
-app.MapGet("/api/requests/sliding", () =>
-{
-    return Results.Ok(new
-    {
-        message = "滑动窗口限流接口调用成功（10 秒窗口内最多 5 次）",
-        timestamp = DateTimeOffset.UtcNow
-    });
-}).RequireRateLimiting("sliding");
-
+app.MapControllers();
 app.Run();

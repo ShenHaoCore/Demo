@@ -1,6 +1,62 @@
-@Demo.Idempotent.Api_HostAddress = http://localhost:5209
+@Demo.Idempotent.Api_HostAddress = http://localhost:5104
 
-GET {{Demo.Idempotent.Api_HostAddress}}/weatherforecast/
+### 首次创建
+POST {{Demo.Idempotent.Api_HostAddress}}/api/orders
+Content-Type: application/json
+Idempotency-Key: demo-key-001
 Accept: application/json
 
+{
+  "product": "键盘",
+  "quantity": 2
+}
+
+### 相同 Key + 相同 Body → 回放首次结果
+POST {{Demo.Idempotent.Api_HostAddress}}/api/orders
+Content-Type: application/json
+Idempotency-Key: demo-key-001
+Accept: application/json
+
+{
+  "product": "键盘",
+  "quantity": 2
+}
+
+### 相同 Key + 空白/字段顺序差异 → 仍回放（属性名排序后再哈希）
+POST {{Demo.Idempotent.Api_HostAddress}}/api/orders
+Content-Type: application/json
+Idempotency-Key: demo-key-001
+Accept: application/json
+
+{"quantity":2,"product":"键盘"}
+
+### 相同 Key + 不同 Body → 409
+POST {{Demo.Idempotent.Api_HostAddress}}/api/orders
+Content-Type: application/json
+Idempotency-Key: demo-key-001
+Accept: application/json
+
+{
+  "product": "鼠标",
+  "quantity": 1
+}
+
+### 并发同 Key：唯一约束冲突后回放首次结果（订单+幂等同事务）
+# 快速连发同一 Key；后到者应拿到与成功者相同的订单 Id
+
+### TTL 过期后
+# 幂等行作废，历史订单保留；同 Key 可再建一笔新订单（非删除旧单）
+
+### 缺少 Idempotency-Key → 400
+POST {{Demo.Idempotent.Api_HostAddress}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+  "product": "键盘",
+  "quantity": 2
+}
+
 ###
+GET {{Demo.Idempotent.Api_HostAddress}}/health
+Accept: application/json
