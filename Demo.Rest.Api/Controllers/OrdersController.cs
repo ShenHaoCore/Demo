@@ -48,16 +48,9 @@ public sealed class OrdersController(IOrderAppService service, ILogger<OrdersCon
     [EndpointSummary("创建")]
     public async Task<IActionResult> CreateAsync(CreateOrderDto input)
     {
-        try
-        {
-            var order = await service.CreateAsync(input);
-            logger.LogInformation("已创建订单 {OrderId}，客户：{CustomerName}", order.Id, order.CustomerName);
-            return Created($"/api/orders/{order.Id}", order);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var order = await service.CreateAsync(input);
+        logger.LogInformation("已创建订单 {OrderId}，客户：{CustomerName}", order.Id, order.CustomerName);
+        return Created($"/api/orders/{order.Id}", order);
     }
 
     /// <summary>
@@ -71,17 +64,10 @@ public sealed class OrdersController(IOrderAppService service, ILogger<OrdersCon
     [EndpointSummary("全量更新")]
     public async Task<IActionResult> UpdateAsync(Guid id, UpdateOrderDto input)
     {
-        try
-        {
-            var updated = await service.UpdateAsync(id, input);
-            if (updated is null) { return NotFound(new { message = $"未找到订单：{id}" }); }
-            logger.LogInformation("已全量更新订单 {OrderId}", id);
-            return Ok(updated);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var updated = await service.UpdateAsync(id, input);
+        if (updated is null) { return NotFound(new { message = $"未找到订单：{id}" }); }
+        logger.LogInformation("已全量更新订单 {OrderId}", id);
+        return Ok(updated);
     }
 
     /// <summary>
@@ -95,17 +81,10 @@ public sealed class OrdersController(IOrderAppService service, ILogger<OrdersCon
     [EndpointSummary("部分更新")]
     public async Task<IActionResult> PatchAsync(Guid id, PatchOrderDto input)
     {
-        try
-        {
-            var updated = await service.PatchAsync(id, input);
-            if (updated is null) { return NotFound(new { message = $"未找到订单：{id}" }); }
-            logger.LogInformation("已部分更新订单 {OrderId}", id);
-            return Ok(updated);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var updated = await service.PatchAsync(id, input);
+        if (updated is null) { return NotFound(new { message = $"未找到订单：{id}" }); }
+        logger.LogInformation("已部分更新订单 {OrderId}", id);
+        return Ok(updated);
     }
 
     /// <summary>
