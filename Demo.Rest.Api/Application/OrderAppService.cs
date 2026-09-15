@@ -4,35 +4,43 @@ using Demo.Rest.Api.Entities;
 
 namespace Demo.Rest.Api.Application;
 
-/// <summary>订单应用服务。</summary>
+/// <summary>
+/// 订单应用服务
+/// </summary>
 public sealed class OrderAppService : IOrderAppService
 {
     private readonly ConcurrentDictionary<Guid, Order> _orders = new();
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     public Task<List<OrderDto>> GetListAsync()
     {
-        var list = _orders.Values
-            .OrderBy(o => o.CreatedAt)
-            .Select(MapToDto)
-            .ToList();
+        var list = _orders.Values.OrderBy(o => o.CreatedAt).Select(MapToDto).ToList();
         return Task.FromResult(list);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     public Task<OrderDto?> GetAsync(Guid id)
     {
-        if (!_orders.TryGetValue(id, out var entity))
-        {
-            return Task.FromResult<OrderDto?>(null);
-        }
-
+        if (!_orders.TryGetValue(id, out var entity)) { return Task.FromResult<OrderDto?>(null); }
         return Task.FromResult<OrderDto?>(MapToDto(entity));
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     public Task<OrderDto> CreateAsync(CreateOrderDto input)
     {
         ArgumentNullException.ThrowIfNull(input);
         ValidateCreate(input);
-
         var now = DateTimeOffset.UtcNow;
         var entity = new Order
         {
@@ -43,21 +51,21 @@ public sealed class OrderAppService : IOrderAppService
             CreatedAt = now,
             UpdatedAt = now
         };
-
         _orders[entity.Id] = entity;
         return Task.FromResult(MapToDto(entity));
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="input"></param>
+    /// <returns></returns>
     public Task<OrderDto?> UpdateAsync(Guid id, UpdateOrderDto input)
     {
         ArgumentNullException.ThrowIfNull(input);
-        if (!_orders.TryGetValue(id, out var existing))
-        {
-            return Task.FromResult<OrderDto?>(null);
-        }
-
+        if (!_orders.TryGetValue(id, out var existing)) { return Task.FromResult<OrderDto?>(null); }
         ValidateUpdate(input);
-
         var updated = new Order
         {
             Id = existing.Id,
@@ -67,76 +75,70 @@ public sealed class OrderAppService : IOrderAppService
             CreatedAt = existing.CreatedAt,
             UpdatedAt = DateTimeOffset.UtcNow
         };
-
         _orders[id] = updated;
         return Task.FromResult<OrderDto?>(MapToDto(updated));
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
     public Task<OrderDto?> PatchAsync(Guid id, PatchOrderDto input)
     {
         ArgumentNullException.ThrowIfNull(input);
-        if (!_orders.TryGetValue(id, out var existing))
-        {
-            return Task.FromResult<OrderDto?>(null);
-        }
-
-        if (input.Amount is { } amount && amount <= 0)
-        {
-            throw new ArgumentException("订单金额必须大于 0", nameof(input.Amount));
-        }
-
+        if (!_orders.TryGetValue(id, out var existing)) { return Task.FromResult<OrderDto?>(null); }
+        if (input.Amount is { } amount && amount <= 0) { throw new ArgumentException("订单金额必须大于 0", nameof(input.Amount)); }
         var updated = new Order
         {
             Id = existing.Id,
-            CustomerName = string.IsNullOrWhiteSpace(input.CustomerName)
-                ? existing.CustomerName
-                : input.CustomerName.Trim(),
+            CustomerName = string.IsNullOrWhiteSpace(input.CustomerName) ? existing.CustomerName : input.CustomerName.Trim(),
             Amount = input.Amount ?? existing.Amount,
-            Status = string.IsNullOrWhiteSpace(input.Status)
-                ? existing.Status
-                : input.Status.Trim(),
+            Status = string.IsNullOrWhiteSpace(input.Status) ? existing.Status : input.Status.Trim(),
             CreatedAt = existing.CreatedAt,
             UpdatedAt = DateTimeOffset.UtcNow
         };
-
         _orders[id] = updated;
         return Task.FromResult<OrderDto?>(MapToDto(updated));
     }
 
-    public Task<bool> DeleteAsync(Guid id) =>
-        Task.FromResult(_orders.TryRemove(id, out _));
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public Task<bool> DeleteAsync(Guid id) => Task.FromResult(_orders.TryRemove(id, out _));
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="input"></param>
+    /// <exception cref="ArgumentException"></exception>
     private static void ValidateCreate(CreateOrderDto input)
     {
-        if (string.IsNullOrWhiteSpace(input.CustomerName))
-        {
-            throw new ArgumentException("客户名称不能为空", nameof(input.CustomerName));
-        }
-
-        if (input.Amount <= 0)
-        {
-            throw new ArgumentException("订单金额必须大于 0", nameof(input.Amount));
-        }
+        if (string.IsNullOrWhiteSpace(input.CustomerName)) { throw new ArgumentException("客户名称不能为空", nameof(input.CustomerName)); }
+        if (input.Amount <= 0) { throw new ArgumentException("订单金额必须大于 0", nameof(input.Amount)); }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="input"></param>
+    /// <exception cref="ArgumentException"></exception>
     private static void ValidateUpdate(UpdateOrderDto input)
     {
-        if (string.IsNullOrWhiteSpace(input.CustomerName))
-        {
-            throw new ArgumentException("客户名称不能为空", nameof(input.CustomerName));
-        }
-
-        if (input.Amount <= 0)
-        {
-            throw new ArgumentException("订单金额必须大于 0", nameof(input.Amount));
-        }
-
-        if (string.IsNullOrWhiteSpace(input.Status))
-        {
-            throw new ArgumentException("订单状态不能为空", nameof(input.Status));
-        }
+        if (string.IsNullOrWhiteSpace(input.CustomerName)) { throw new ArgumentException("客户名称不能为空", nameof(input.CustomerName)); }
+        if (input.Amount <= 0) { throw new ArgumentException("订单金额必须大于 0", nameof(input.Amount)); }
+        if (string.IsNullOrWhiteSpace(input.Status)) { throw new ArgumentException("订单状态不能为空", nameof(input.Status)); }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="entity"></param>
+    /// <returns></returns>
     private static OrderDto MapToDto(Order entity) => new()
     {
         Id = entity.Id,
