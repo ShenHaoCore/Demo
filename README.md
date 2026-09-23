@@ -40,6 +40,7 @@
 | [Demo.Payment.Api](Demo.Payment.Api) | 5123 | 支付相关 | HMAC 回调幂等入账 |
 | [Demo.DiLifetime.Api](Demo.DiLifetime.Api) | 5124 | CSharp/DI生命周期 | 三种生命周期对比 |
 | [Demo.I18n.Api](Demo.I18n.Api) | 5125 | CSharp/国际化 | 消息本地化 + 数据国际化 |
+| [Demo.Configuration.Api](Demo.Configuration.Api) | 5126 | CSharp/配置 | 环境分层加载 / 覆盖优先级 / Options 校验 |
 | [Demo.AsyncAwait.Console](Demo.AsyncAwait.Console) | — | CSharp/async与await | 并发与取消 |
 | [Demo.Linq.Console](Demo.Linq.Console) | — | CSharp/LINQ | 常用算子演示 |
 | [Demo.Delegates.Console](Demo.Delegates.Console) | — | CSharp/委托 | 委托 / 事件 / 多播 |

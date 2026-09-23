@@ -1,0 +1,27 @@
+@host = http://localhost:5126
+
+### 健康检查
+GET {{host}}/health
+
+### 当前生效配置（含 ValueSources：各键来自哪个提供程序）
+GET {{host}}/api/config
+
+### 配置提供程序顺序
+GET {{host}}/api/config/providers
+
+###
+# Scalar 仅 Development 环境启用：http://localhost:5126/scalar
+# Staging / Production Profile 请用本 .http 或 curl 调用接口。
+#
+# 切换环境：
+#   dotnet run --launch-profile Development
+#   dotnet run --launch-profile Staging
+#   dotnet run --launch-profile Production
+#   dotnet run --launch-profile Development_EnvOverride
+#
+# User Secrets（Development 自动加载，优先级高于 appsettings.*.json）：
+#   dotnet user-secrets set "Demo:ApiKey" "DEMO-ONLY-from-user-secrets"
+#   dotnet user-secrets set "Demo:MaxRequestsPerMinute" "88"
+#   清除：dotnet user-secrets clear
+#
+# 警告：仓库内 ApiKey 均为 DEMO-ONLY 假值；生产密钥勿提交 Git。

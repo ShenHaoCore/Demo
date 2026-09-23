@@ -28,7 +28,8 @@ $apis = @(
     @{ Name = "Demo.OrderTimeout.Api"; Port = 5122 },
     @{ Name = "Demo.Payment.Api"; Port = 5123 },
     @{ Name = "Demo.DiLifetime.Api"; Port = 5124 },
-    @{ Name = "Demo.I18n.Api"; Port = 5125 }
+    @{ Name = "Demo.I18n.Api"; Port = 5125 },
+    @{ Name = "Demo.Configuration.Api"; Port = 5126 }
 )
 
 $consoles = @(
