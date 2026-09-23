@@ -1,0 +1,26 @@
+@host = http://localhost:5125
+
+### 健康检查
+GET {{host}}/health
+
+### 当前文化
+GET {{host}}/api/culture
+
+### 消息本地化（默认 zh-CN）
+GET {{host}}/api/messages/welcome
+
+### 消息本地化（查询参数）
+GET {{host}}/api/messages/welcome?culture=en
+
+### 消息本地化（Accept-Language）
+GET {{host}}/api/messages/welcome
+Accept-Language: en
+
+### 商品列表（默认 zh-CN）
+GET {{host}}/api/products
+
+### 商品详情（英文）
+GET {{host}}/api/products/1?culture=en
+
+### 不存在的商品（本地化错误消息）
+GET {{host}}/api/products/999?culture=en
