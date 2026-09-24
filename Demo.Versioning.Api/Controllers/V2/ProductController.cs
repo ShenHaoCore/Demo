@@ -12,7 +12,7 @@ namespace Demo.Versioning.Api.Controllers.V2;
 [ApiController]
 [ApiVersion(ApiVersions.V2)]
 [Route("api/v{version:apiVersion}/products")]
-public sealed class ProductController(IProductAppService productAppService) : ControllerBase
+public sealed class ProductController(IProductAppService service) : ControllerBase
 {
     private const bool IncludeDescription = true;
 
@@ -20,7 +20,7 @@ public sealed class ProductController(IProductAppService productAppService) : Co
     [ProducesResponseType(typeof(List<ProductDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<ProductDto>>> GetListAsync()
     {
-        var list = await productAppService.GetListAsync(IncludeDescription);
+        var list = await service.GetListAsync(IncludeDescription);
         return Ok(list);
     }
 
@@ -29,12 +29,8 @@ public sealed class ProductController(IProductAppService productAppService) : Co
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProductDto>> GetAsync(Guid id)
     {
-        var dto = await productAppService.GetAsync(id, IncludeDescription);
-        if (dto is null)
-        {
-            return NotFound(new { message = "产品不存在", id });
-        }
-
+        var dto = await service.GetAsync(id, IncludeDescription);
+        if (dto is null) { return NotFound(new { message = "产品不存在", id }); }
         return Ok(dto);
     }
 
@@ -45,7 +41,7 @@ public sealed class ProductController(IProductAppService productAppService) : Co
     {
         try
         {
-            var dto = await productAppService.CreateAsync(input, IncludeDescription);
+            var dto = await service.CreateAsync(input, IncludeDescription);
             return CreatedAtAction(nameof(GetAsync), new { id = dto.Id, version = ApiVersions.V2 }, dto);
         }
         catch (ArgumentException ex)
