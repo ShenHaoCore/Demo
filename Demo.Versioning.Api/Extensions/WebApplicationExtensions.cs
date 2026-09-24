@@ -11,6 +11,7 @@ public static class WebApplicationExtensions
         app.MapOpenApi();
         app.MapScalarApiReference(options =>
         {
+            options.WithDarkMode(false);
             foreach (var (documentName, title) in ApiVersions.OpenApiDocuments)
             {
                 options.AddDocument(documentName, title);

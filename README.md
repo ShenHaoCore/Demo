@@ -63,4 +63,5 @@ Development 下访问 Scalar：`http://localhost:{端口}/scalar`
 - 目标框架：`net9.0`
 - 应持久化的状态：各项目以进程内内存为主（教学简化）；需要持久化时可改为独立 SQLite，互不共享
 - 日志与错误信息：简体中文
+- Scalar API 文档：默认浅色模式（`WithDarkMode(false)`）
 - 项目之间零引用，便于单独拷贝学习
