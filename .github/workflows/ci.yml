@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: 构建与测试
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: 还原并构建全部项目
+        shell: bash
+        run: |
+          set -e
+          find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' | while read -r proj; do
+            echo "==> 构建 $proj"
+            dotnet build "$proj" -c Release --nologo
+          done
+
+      - name: 运行测试
+        run: dotnet test Demo.Algorithms.Tests/Demo.Algorithms.Tests.csproj -c Release --no-build --nologo

@@ -1,4 +1,7 @@
-﻿# Demo
+# Demo
+
+[![CI](https://github.com/ShenHaoCore/Demo/actions/workflows/ci.yml/badge.svg)](https://github.com/ShenHaoCore/Demo/actions/workflows/ci.yml)
+[![Release](https://github.com/ShenHaoCore/Demo/actions/workflows/release.yml/badge.svg)](https://github.com/ShenHaoCore/Demo/releases)
 
 基于 `haonotes` 面试笔记的 **C# 独立 Demo 集合**。命名风格参考原仓库 `E:\Repos\Demo1`（`Demo.{主题}.Api`），但：
 
