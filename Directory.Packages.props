@@ -6,8 +6,8 @@
   -->
 
   <ItemGroup>
-    <!-- Api 项目通用 -->
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.19" />
+    <!-- Api 项目通用（Microsoft 9.0.x 系列补丁统一对齐到 9.0.22） -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.22" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.4.18" />
 
     <!-- API 版本化 -->
@@ -15,10 +15,10 @@
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
 
     <!-- 认证 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.22" />
 
     <!-- 存储 -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.22" />
 
     <!-- 弹性 -->
     <PackageVersion Include="Polly.Core" Version="8.7.0" />
