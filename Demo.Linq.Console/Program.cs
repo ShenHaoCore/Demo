@@ -1,4 +1,4 @@
-﻿Console.OutputEncoding = System.Text.Encoding.UTF8;
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 Console.WriteLine("=== Demo.Linq.Console：LINQ 演示 ===\n");
 
 var products = new[]
