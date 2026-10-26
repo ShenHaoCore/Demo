@@ -55,7 +55,7 @@ jobs:
           set -e
           find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' | while read -r proj; do
             echo "==> 校验 $proj"
-            dotnet format "$proj" --verify-no-changes --nologo
+            dotnet format "$proj" --verify-no-changes
           done
 
   vulnerable-packages:
@@ -83,28 +83,13 @@ jobs:
         shell: bash
         run: |
           set -e
-          cat > /tmp/check_vuln.py <<'PY'
-          import json, sys
-
-          data = json.load(sys.stdin)
-          findings = []
-          for project in data.get("projects", []):
-              for framework in project.get("frameworks") or []:
-                  packages = (framework.get("topLevelPackages") or []) + (framework.get("transitivePackages") or [])
-                  for pkg in packages:
-                      for vuln in pkg.get("vulnerabilities") or []:
-                          if vuln.get("severity") in ("High", "Critical"):
-                              findings.append(
-                                  f'{project["path"]}: {pkg["name"]} {pkg.get("resolvedVersion")}'
-                                  f' -> {vuln["severity"]} {vuln.get("advisory", "")}'
-                              )
-          if findings:
-              print("发现 High/Critical 级别已知漏洞：")
-              print("\n".join(findings))
-              sys.exit(1)
-          print("未发现 High/Critical 级别已知漏洞")
-          PY
+          # 有漏洞时 dotnet list package --vulnerable 退出码非 0（SDK 8+ 行为）；
+          # 再按输出兜底扫一遍 High/Critical 关键字，双保险
           find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' | while read -r proj; do
             echo "==> 检查 $proj"
-            dotnet list "$proj" package --vulnerable --include-transitive --format json | python3 /tmp/check_vuln.py
+            out=$(dotnet list "$proj" package --vulnerable --include-transitive 2>&1) \
+              || { echo "$out"; exit 1; }
+            echo "$out" | grep -E 'Severity:\s*(High|Critical)' && {
+              echo "发现 High/Critical 级别已知漏洞"; exit 1;
+            } || true
           done
