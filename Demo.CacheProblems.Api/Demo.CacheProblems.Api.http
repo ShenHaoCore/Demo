@@ -1,6 +1,33 @@
-@Demo.CacheProblems.Api_HostAddress = http://localhost:5097
+@Demo.CacheProblems.Api_HostAddress = http://localhost:5114
 
-GET {{Demo.CacheProblems.Api_HostAddress}}/weatherforecast/
+### 缓存穿透：不存在的 id 首次查 DB 并缓存空值（TTL 30 秒），之后不再打 DB
+GET {{Demo.CacheProblems.Api_HostAddress}}/api/demo/penetration?id=notexist
+Accept: application/json
+
+### 穿透对照组：关闭空值缓存，每次未命中都查询 DB
+GET {{Demo.CacheProblems.Api_HostAddress}}/api/demo/penetration?id=notexist&cacheNull=false
+Accept: application/json
+
+### 手动过期热点 key hot:product，配合击穿演示
+POST {{Demo.CacheProblems.Api_HostAddress}}/api/demo/cache/expire-hot
+Accept: application/json
+
+### 缓存击穿：热点过期时互斥锁重建（抢不到锁的请求等待后命中或返回 409）
+GET {{Demo.CacheProblems.Api_HostAddress}}/api/demo/breakdown
+Accept: application/json
+
+### 击穿对照组：无锁重建，并发请求会同时打模拟 DB
+GET {{Demo.CacheProblems.Api_HostAddress}}/api/demo/breakdown?useLock=false
+Accept: application/json
+
+### 缓存雪崩：5 个批量 key 的 TTL = 基础值 + 随机抖动
+GET {{Demo.CacheProblems.Api_HostAddress}}/api/demo/avalanche
+Accept: application/json
+
+### 雪崩对照组：关闭抖动，所有 key 使用相同 TTL
+GET {{Demo.CacheProblems.Api_HostAddress}}/api/demo/avalanche?jitter=false
 Accept: application/json
 
 ###
+GET {{Demo.CacheProblems.Api_HostAddress}}/health
+Accept: application/json

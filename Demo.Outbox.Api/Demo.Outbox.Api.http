@@ -1,6 +1,33 @@
-@Demo.Outbox.Api_HostAddress = http://localhost:5161
+@Demo.Outbox.Api_HostAddress = http://localhost:5105
 
-GET {{Demo.Outbox.Api_HostAddress}}/weatherforecast/
+### 创建订单（订单与 OrderCreated outbox 消息在同一内存事务写入，返回 201）
+POST {{Demo.Outbox.Api_HostAddress}}/api/orders
+Content-Type: application/json
 Accept: application/json
 
+{
+  "product": "键盘",
+  "quantity": 2
+}
+
+### 查看订单列表
+GET {{Demo.Outbox.Api_HostAddress}}/api/orders
+Accept: application/json
+
+### 查看 outbox 消息状态（后台每秒轮询发布，约 1 秒后重查：Pending 变 Published）
+GET {{Demo.Outbox.Api_HostAddress}}/api/outbox
+Accept: application/json
+
+### 参数校验失败（quantity 必须大于 0，返回 400）
+POST {{Demo.Outbox.Api_HostAddress}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+  "product": "键盘",
+  "quantity": 0
+}
+
 ###
+GET {{Demo.Outbox.Api_HostAddress}}/health
+Accept: application/json

@@ -1,6 +1,26 @@
-@Demo.QrLogin.Api_HostAddress = http://localhost:5237
+@Demo.QrLogin.Api_HostAddress = http://localhost:5118
 
-GET {{Demo.QrLogin.Api_HostAddress}}/weatherforecast/
+### 健康检查
+GET {{Demo.QrLogin.Api_HostAddress}}/health
 Accept: application/json
 
-###
+### 创建二维码票据（复制返回的 ticket，替换下方请求里的 <ticket>）
+POST {{Demo.QrLogin.Api_HostAddress}}/api/qr/create
+Accept: application/json
+
+### 手机端扫码（票据需处于 Pending；username 可省略，缺省为"演示用户"）
+POST {{Demo.QrLogin.Api_HostAddress}}/api/qr/<ticket>/scan
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "alice"
+}
+
+### 手机端确认（需先扫码，返回登录态 token；重复确认返回 400）
+POST {{Demo.QrLogin.Api_HostAddress}}/api/qr/<ticket>/confirm
+Accept: application/json
+
+### PC 端轮询状态（Confirmed 后返回 token；票据 2 分钟后过期，状态变 Expired）
+GET {{Demo.QrLogin.Api_HostAddress}}/api/qr/<ticket>/status
+Accept: application/json

@@ -1,6 +1,39 @@
-@Demo.OptimisticLock.Api_HostAddress = http://localhost:5192
+@Demo.OptimisticLock.Api_HostAddress = http://localhost:5120
 
-GET {{Demo.OptimisticLock.Api_HostAddress}}/weatherforecast/
+### 健康检查
+GET {{Demo.OptimisticLock.Api_HostAddress}}/health
 Accept: application/json
 
-###
+### 查询商品（预置 id 1、2，初始 version 均为 1）
+GET {{Demo.OptimisticLock.Api_HostAddress}}/api/products/1
+Accept: application/json
+
+### 创建商品
+POST {{Demo.OptimisticLock.Api_HostAddress}}/api/products
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "新商品",
+  "stock": 10
+}
+
+### CAS 更新库存（成功后 version 递增）
+PUT {{Demo.OptimisticLock.Api_HostAddress}}/api/products/1/stock
+Content-Type: application/json
+Accept: application/json
+
+{
+  "stock": 90,
+  "expectedVersion": 1
+}
+
+### 用旧 version 重放（expectedVersion 与当前不一致，返回 409 并附 currentVersion）
+PUT {{Demo.OptimisticLock.Api_HostAddress}}/api/products/1/stock
+Content-Type: application/json
+Accept: application/json
+
+{
+  "stock": 80,
+  "expectedVersion": 1
+}

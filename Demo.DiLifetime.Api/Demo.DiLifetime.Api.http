@@ -1,6 +1,11 @@
-@Demo.DiLifetime.Api_HostAddress = http://localhost:5183
+@Demo.DiLifetime.Api_HostAddress = http://localhost:5124
 
-GET {{Demo.DiLifetime.Api_HostAddress}}/weatherforecast/
+### 同一请求内 Resolve 两次：Singleton 两次 Id 相同（跨请求也不变）；
+# Scoped 两次 Id 相同（换请求才变）；Transient 两次 Id 都不同。
+# 多发几次对比 FirstResolve / SecondResolve 与跨请求的变化。
+GET {{Demo.DiLifetime.Api_HostAddress}}/api/di/demo
 Accept: application/json
 
 ###
+GET {{Demo.DiLifetime.Api_HostAddress}}/health
+Accept: application/json

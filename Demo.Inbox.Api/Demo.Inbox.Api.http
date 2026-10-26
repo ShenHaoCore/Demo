@@ -1,6 +1,48 @@
-@Demo.Inbox.Api_HostAddress = http://localhost:5053
+@Demo.Inbox.Api_HostAddress = http://localhost:5106
 
-GET {{Demo.Inbox.Api_HostAddress}}/weatherforecast/
+### 首次投递（执行副作用，sideEffectCounter 加 1）
+POST {{Demo.Inbox.Api_HostAddress}}/api/events
+Content-Type: application/json
 Accept: application/json
 
+{
+  "messageId": "m-1",
+  "payload": "订单已创建"
+}
+
+### 重复投递同一 messageId（duplicated=true，副作用不再执行，dedupCount 加 1）
+POST {{Demo.Inbox.Api_HostAddress}}/api/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "messageId": "m-1",
+  "payload": "订单已创建"
+}
+
+### 模拟消费失败（返回 500，不写 inbox，之后去掉 fail 可重新投递）
+POST {{Demo.Inbox.Api_HostAddress}}/api/events?fail=true
+Content-Type: application/json
+Accept: application/json
+
+{
+  "messageId": "m-2",
+  "payload": "会失败的消息"
+}
+
+### 查看统计（processedCount / dedupCount / sideEffectCounter 三者对照）
+GET {{Demo.Inbox.Api_HostAddress}}/api/stats
+Accept: application/json
+
+### 缺少 messageId（返回 400）
+POST {{Demo.Inbox.Api_HostAddress}}/api/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "payload": "没有 messageId"
+}
+
 ###
+GET {{Demo.Inbox.Api_HostAddress}}/health
+Accept: application/json

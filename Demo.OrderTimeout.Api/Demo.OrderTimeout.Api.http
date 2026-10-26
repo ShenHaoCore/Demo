@@ -1,6 +1,31 @@
-@Demo.OrderTimeout.Api_HostAddress = http://localhost:5089
+@Demo.OrderTimeout.Api_HostAddress = http://localhost:5122
 
-GET {{Demo.OrderTimeout.Api_HostAddress}}/weatherforecast/
+### 创建待支付订单（timeoutSeconds 可调 3-3600，默认 15；调到 3 秒便于观察竞态）
+POST {{Demo.OrderTimeout.Api_HostAddress}}/api/orders
+Content-Type: application/json
 Accept: application/json
 
+{
+  "product": "键盘",
+  "amount": 299,
+  "timeoutSeconds": 5
+}
+
+### 查询订单状态（替换为创建响应中的 id）
+GET {{Demo.OrderTimeout.Api_HostAddress}}/api/orders/00000000-0000-0000-0000-000000000001
+Accept: application/json
+
+### 支付订单（CAS：Pending -> Paid）；超时后调用返回 409，currentStatus 为 Closed
+POST {{Demo.OrderTimeout.Api_HostAddress}}/api/orders/00000000-0000-0000-0000-000000000001/pay
+Accept: application/json
+
+### 手动关单（同样使用 CAS）；已支付时返回 409，currentStatus 为 Paid
+POST {{Demo.OrderTimeout.Api_HostAddress}}/api/orders/00000000-0000-0000-0000-000000000001/close
+Accept: application/json
+
+### 观察竞态：创建 3 秒超时订单后，在 3 秒内快速连发 pay 与 close，
+# 只有一方 Success，另一方拿到 409 + 当前状态；后台服务每 500ms 扫描一次。
+
 ###
+GET {{Demo.OrderTimeout.Api_HostAddress}}/health
+Accept: application/json

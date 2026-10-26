@@ -1,6 +1,32 @@
-@Demo.Seckill.Api_HostAddress = http://localhost:5227
+@Demo.Seckill.Api_HostAddress = http://localhost:5115
 
-GET {{Demo.Seckill.Api_HostAddress}}/weatherforecast/
+### 创建秒杀活动（返回活动 id，供后续请求使用）
+POST {{Demo.Seckill.Api_HostAddress}}/api/seckill/activities
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "手机秒杀",
+  "stock": 5
+}
+
+### 查询活动状态与剩余库存（把 {id} 换成上一步返回的 id）
+GET {{Demo.Seckill.Api_HostAddress}}/api/seckill/activities/{id}
+Accept: application/json
+
+### 抢购：原子预扣库存，成功返回 ticketId（库存归零后返回 409）
+POST {{Demo.Seckill.Api_HostAddress}}/api/seckill/{id}/grab
+Content-Type: application/json
+Accept: application/json
+
+{
+  "userId": "u1"
+}
+
+### 查询抢购票据/订单状态（status: Queued -> Built，把 {ticketId} 换成抢购返回的 ticketId）
+GET {{Demo.Seckill.Api_HostAddress}}/api/seckill/orders/{ticketId}
 Accept: application/json
 
 ###
+GET {{Demo.Seckill.Api_HostAddress}}/health
+Accept: application/json
