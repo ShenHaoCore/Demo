@@ -4,7 +4,7 @@
 [![Release](https://github.com/ShenHaoCore/Demo/actions/workflows/release.yml/badge.svg)](https://github.com/ShenHaoCore/Demo/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-基于 `haonotes` 面试笔记的 **C# 独立 Demo 集合**。命名风格参考原仓库 `E:\Repos\Demo1`（`Demo.{主题}.Api`），但：
+面向面试复习的 **C# 独立 Demo 集合**。命名风格 `Demo.{主题}.Api`，但：
 
 - 落在仓库 `E:\Repos\Demo`（由 NotesDemo 更名）
 - **每个主题一个独立目录**，自带 `.sln`，互不引用、无 Shared 项目
