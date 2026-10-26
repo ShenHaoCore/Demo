@@ -6,14 +6,13 @@
 
 面向面试复习的 **C# 独立 Demo 集合**。命名风格 `Demo.{主题}.Api`，但：
 
-- 落在仓库 `E:\Repos\Demo`（由 NotesDemo 更名）
 - **每个主题一个独立目录**，自带 `.sln`，互不引用、无 Shared 项目
-- 端口从 **5101** 起，避免与 `Demo1`（5066–5084）冲突
+- 端口从 **5101** 起，各项目固定互不冲突
 
 ## 环境
 
 - .NET SDK 9.0+
-- Windows / Linux / macOS
+- Linux（CI 已验证）；net9.0 标准 API，Windows / macOS 未在 CI 验证
 
 ## 项目一览
 
