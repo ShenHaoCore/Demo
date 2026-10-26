@@ -4,7 +4,7 @@
 
 发版流程见 [docs/branch-management.md](docs/branch-management.md)：`release/x.y.z` 冻结期把「未发布」段改写为版本号，并补写「升级到本版本要做什么」。
 
-## [未发布]
+## [0.1.0] - 2026-10-26
 
 ### 新增
 - 根级 `Demo.sln` 聚合 30 个项目，CI 全部门禁改用解决方案单命令执行
