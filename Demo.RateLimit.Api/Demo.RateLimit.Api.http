@@ -1,6 +1,17 @@
-@Demo.RateLimit.Api_HostAddress = http://localhost:5001
+@Demo.RateLimit.Api_HostAddress = http://localhost:5109
 
-GET {{Demo.RateLimit.Api_HostAddress}}/weatherforecast/
+### 无限制接口（对照组）
+GET {{Demo.RateLimit.Api_HostAddress}}/api/requests/unlimited
+Accept: application/json
+
+### 固定窗口限流（10 秒内最多 5 次，第 6 次返回 429 + Retry-After）
+GET {{Demo.RateLimit.Api_HostAddress}}/api/requests/fixed
+Accept: application/json
+
+### 滑动窗口限流（10 秒窗口切 5 段，最多 5 次）
+GET {{Demo.RateLimit.Api_HostAddress}}/api/requests/sliding
 Accept: application/json
 
 ###
+GET {{Demo.RateLimit.Api_HostAddress}}/health
+Accept: application/json

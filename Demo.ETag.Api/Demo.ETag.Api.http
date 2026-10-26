@@ -1,6 +1,36 @@
-@Demo.ETag.Api_HostAddress = http://localhost:5012
+@Demo.ETag.Api_HostAddress = http://localhost:5103
 
-GET {{Demo.ETag.Api_HostAddress}}/weatherforecast/
+### 获取文档（复制响应头里的 ETag，填到下面 PUT 的 If-Match）
+GET {{Demo.ETag.Api_HostAddress}}/api/documents/doc-1
+Accept: application/json
+
+### 更新成功（If-Match 填上一步返回的 ETag，形如 "1A2B3C4D5E6F7089"）
+PUT {{Demo.ETag.Api_HostAddress}}/api/documents/doc-1
+If-Match: "把这里替换为 GET 返回的 ETag"
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "新标题",
+  "content": "新内容"
+}
+
+### 更新冲突（原样重发上面成功过的 PUT，If-Match 已过期：返回 412，响应体带当前 currentETag）
+
+### 缺少 If-Match（返回 400）
+PUT {{Demo.ETag.Api_HostAddress}}/api/documents/doc-1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "标题",
+  "content": "内容"
+}
+
+### 不存在的文档（返回 404）
+GET {{Demo.ETag.Api_HostAddress}}/api/documents/no-such-doc
 Accept: application/json
 
 ###
+GET {{Demo.ETag.Api_HostAddress}}/health
+Accept: application/json

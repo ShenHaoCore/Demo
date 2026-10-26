@@ -1,6 +1,33 @@
-@Demo.Sso.Api_HostAddress = http://localhost:5216
+@Demo.Sso.Api_HostAddress = http://localhost:5119
 
-GET {{Demo.Sso.Api_HostAddress}}/weatherforecast/
+### 健康检查
+GET {{Demo.Sso.Api_HostAddress}}/health
 Accept: application/json
 
-###
+### 查看白名单内的演示客户端（service）
+GET {{Demo.Sso.Api_HostAddress}}/api/sso/clients
+Accept: application/json
+
+### SSO 登录（演示：任意非空用户名密码均可；复制返回的 ssoSessionId）
+POST {{Demo.Sso.Api_HostAddress}}/api/sso/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "alice",
+  "password": "x"
+}
+
+### 用 SSO 会话签发一次性 ticket（把 <ssoSessionId> 替换为登录返回值；service 必须在白名单内）
+GET {{Demo.Sso.Api_HostAddress}}/api/sso/ticket?service=https%3A%2F%2Fapp-a.demo.local%2Fcallback&ssoSessionId=<ssoSessionId>
+Accept: application/json
+
+### 校验 ticket（把 <ticket> 替换为签发返回值；一次性，重放返回"ticket 已被消费"）
+POST {{Demo.Sso.Api_HostAddress}}/api/sso/validate
+Content-Type: application/json
+Accept: application/json
+
+{
+  "ticket": "<ticket>",
+  "service": "https://app-a.demo.local/callback"
+}

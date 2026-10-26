@@ -1,6 +1,59 @@
-@Demo.Payment.Api_HostAddress = http://localhost:5031
+@Demo.Payment.Api_HostAddress = http://localhost:5123
 
-GET {{Demo.Payment.Api_HostAddress}}/weatherforecast/
+### 创建支付单（取响应中的 id 用于下面的回调）
+POST {{Demo.Payment.Api_HostAddress}}/api/payments
+Content-Type: application/json
 Accept: application/json
 
+{
+  "orderId": "o-1001",
+  "amount": 10.5
+}
+
+### 查询支付单状态（替换为创建响应中的 id）
+GET {{Demo.Payment.Api_HostAddress}}/api/payments/00000000-0000-0000-0000-000000000001
+Accept: application/json
+
+### 回调签名说明（payloadFormat / secret / 示例，演示用）
+GET {{Demo.Payment.Api_HostAddress}}/api/payments/notify/sign-help
+Accept: application/json
+
+### HMAC 回调入账（paymentId 替换为创建响应中的 id）
+# 签名：HMACSHA256(UTF8("paymentId|notifyId|amount|status"), UTF8("demo-payment-secret")) -> hex
+# 可用 openssl 计算（与响应字段一致）：
+#   openssl dgst -sha256 -hmac "demo-payment-secret" \
+#     <(printf %s "<paymentId>|n-001|10.5|success")
+POST {{Demo.Payment.Api_HostAddress}}/api/payments/notify
+Content-Type: application/json
+Accept: application/json
+
+{
+  "paymentId": "00000000-0000-0000-0000-000000000001",
+  "notifyId": "n-001",
+  "amount": 10.5,
+  "status": "success",
+  "signature": "在这里填入上面 payload 的 HMAC-SHA256 hex"
+}
+
+### 同一 notifyId 重发 → 幂等：200 + alreadyPaid，不重复入账
+# 再次发送上一步相同的 Body 即可
+
+### 签名不合法 → 401 "HMAC 签名校验失败"
+POST {{Demo.Payment.Api_HostAddress}}/api/payments/notify
+Content-Type: application/json
+Accept: application/json
+
+{
+  "paymentId": "00000000-0000-0000-0000-000000000001",
+  "notifyId": "n-002",
+  "amount": 10.5,
+  "status": "success",
+  "signature": "DEADBEEF"
+}
+
+### 回调金额与支付单不一致 → 409 Conflict
+# 把 amount 改为 99 并重算签名后发送
+
 ###
+GET {{Demo.Payment.Api_HostAddress}}/health
+Accept: application/json

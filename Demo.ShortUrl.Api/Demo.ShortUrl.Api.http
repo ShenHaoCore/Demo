@@ -1,6 +1,21 @@
-@Demo.ShortUrl.Api_HostAddress = http://localhost:5257
+@Demo.ShortUrl.Api_HostAddress = http://localhost:5112
 
-GET {{Demo.ShortUrl.Api_HostAddress}}/weatherforecast/
+### 创建短链（返回 code 与 shortPath，记下 code 供后续请求使用）
+POST {{Demo.ShortUrl.Api_HostAddress}}/api/urls
+Content-Type: application/json
 Accept: application/json
 
+{
+  "longUrl": "https://learn.microsoft.com/dotnet"
+}
+
+### 查询短链详情与访问计数（把 {code} 换成上一步返回的 code）
+GET {{Demo.ShortUrl.Api_HostAddress}}/api/urls/{code}
+Accept: application/json
+
+### 302 跳转到原始地址（根路由，VisitCount 自增）
+GET {{Demo.ShortUrl.Api_HostAddress}}/{code}
+
 ###
+GET {{Demo.ShortUrl.Api_HostAddress}}/health
+Accept: application/json

@@ -1,6 +1,23 @@
-@Demo.Redis.Api_HostAddress = http://localhost:5185
+@Demo.Redis.Api_HostAddress = http://localhost:5113
 
-GET {{Demo.Redis.Api_HostAddress}}/weatherforecast/
+### Cache-Aside 读：首次 source=db 并回填缓存，再次调用 source=cache
+GET {{Demo.Redis.Api_HostAddress}}/api/products/1
+Accept: application/json
+
+### 更新：先更新模拟 DB，再删除对应缓存（Cache-Aside 写策略）
+PUT {{Demo.Redis.Api_HostAddress}}/api/products/1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "改名商品",
+  "price": 29.9
+}
+
+### 缓存命中统计（hits / misses / entries）
+GET {{Demo.Redis.Api_HostAddress}}/api/cache/stats
 Accept: application/json
 
 ###
+GET {{Demo.Redis.Api_HostAddress}}/health
+Accept: application/json
