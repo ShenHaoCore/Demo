@@ -17,6 +17,11 @@
 ## 全景图
 
 ```mermaid
+---
+config:
+  gitGraph:
+    mainBranchName: master
+---
 gitGraph
     commit id: "init"
     branch "develop"
