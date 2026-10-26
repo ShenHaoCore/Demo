@@ -19,36 +19,36 @@
 
 | 项目 | 端口 | 对应笔记 | 说明 |
 |------|------|----------|------|
-| [Demo.Rest.Api](Demo.Rest.Api) | 5101 | API/REST | HTTP 动词与资源设计 |
-| [Demo.Versioning.Api](Demo.Versioning.Api) | 5102 | API/API版本化 | URL / Header 版本 |
-| [Demo.ETag.Api](Demo.ETag.Api) | 5103 | API/ETag | If-Match 乐观并发 |
-| [Demo.Idempotent.Api](Demo.Idempotent.Api) | 5104 | 分布式/幂等性 | Idempotency-Key |
-| [Demo.Outbox.Api](Demo.Outbox.Api) | 5105 | 分布式/Outbox | Transactional Outbox |
-| [Demo.Inbox.Api](Demo.Inbox.Api) | 5106 | 分布式/Inbox | Transactional Inbox |
-| [Demo.MqConsumer.Api](Demo.MqConsumer.Api) | 5107 | 分布式/消息消费 | ACK / 重试 / DLQ |
-| [Demo.Saga.Api](Demo.Saga.Api) | 5108 | 分布式/Saga | 编排式补偿 |
-| [Demo.RateLimit.Api](Demo.RateLimit.Api) | 5109 | 弹性/限流 | 固定 / 滑动窗口 |
-| [Demo.Retry.Api](Demo.Retry.Api) | 5110 | 弹性/重试 | 指数退避 |
-| [Demo.CircuitBreaker.Api](Demo.CircuitBreaker.Api) | 5111 | 弹性/熔断 | 开/半开/关 |
-| [Demo.ShortUrl.Api](Demo.ShortUrl.Api) | 5112 | 缓存/短网址 | 短链跳转 |
-| [Demo.Redis.Api](Demo.Redis.Api) | 5113 | 缓存/Redis缓存 | Cache-Aside（内存模拟） |
-| [Demo.CacheProblems.Api](Demo.CacheProblems.Api) | 5114 | 缓存/缓存三大问题 | 穿透 / 击穿 / 雪崩 |
-| [Demo.Seckill.Api](Demo.Seckill.Api) | 5115 | 缓存/秒杀 | 预扣 + 异步建单 |
-| [Demo.PasswordAuth.Api](Demo.PasswordAuth.Api) | 5116 | 认证/密码认证 | PBKDF2 加盐哈希 |
-| [Demo.JwtAuth.Api](Demo.JwtAuth.Api) | 5117 | 认证/JWT | Access + Refresh |
-| [Demo.QrLogin.Api](Demo.QrLogin.Api) | 5118 | 认证/扫码登录 | Ticket 状态机 Mock |
-| [Demo.Sso.Api](Demo.Sso.Api) | 5119 | 认证/单点登录 | 简化 CAS Ticket |
-| [Demo.OptimisticLock.Api](Demo.OptimisticLock.Api) | 5120 | 存储/乐观锁 | 版本号 CAS |
-| [Demo.DistributedLock.Api](Demo.DistributedLock.Api) | 5121 | 存储/分布式锁 | SET NX EX（内存） |
-| [Demo.OrderTimeout.Api](Demo.OrderTimeout.Api) | 5122 | 支付/超时关单 | 关单 vs 支付竞态 |
-| [Demo.Payment.Api](Demo.Payment.Api) | 5123 | 支付相关 | HMAC 回调幂等入账 |
-| [Demo.DiLifetime.Api](Demo.DiLifetime.Api) | 5124 | CSharp/DI生命周期 | 三种生命周期对比 |
-| [Demo.I18n.Api](Demo.I18n.Api) | 5125 | CSharp/国际化 | 消息本地化 + 数据国际化 |
-| [Demo.Configuration.Api](Demo.Configuration.Api) | 5126 | CSharp/配置 | 环境分层加载 / 覆盖优先级 / Options 校验 |
-| [Demo.AsyncAwait.Console](Demo.AsyncAwait.Console) | — | CSharp/async与await | 并发与取消 |
-| [Demo.Linq.Console](Demo.Linq.Console) | — | CSharp/LINQ | 常用算子演示 |
-| [Demo.Delegates.Console](Demo.Delegates.Console) | — | CSharp/委托 | 委托 / 事件 / 多播 |
-| [Demo.Algorithms.Tests](Demo.Algorithms.Tests) | — | 算法/* | 双指针 / 链表 / 二叉树 |
+| [Demo.Rest.Api](Demo.Rest.Api/README.md) | 5101 | API/REST | HTTP 动词与资源设计 |
+| [Demo.Versioning.Api](Demo.Versioning.Api/README.md) | 5102 | API/API版本化 | URL / Header 版本 |
+| [Demo.ETag.Api](Demo.ETag.Api/README.md) | 5103 | API/ETag | If-Match 乐观并发 |
+| [Demo.Idempotent.Api](Demo.Idempotent.Api/README.md) | 5104 | 分布式/幂等性 | Idempotency-Key |
+| [Demo.Outbox.Api](Demo.Outbox.Api/README.md) | 5105 | 分布式/Outbox | Transactional Outbox |
+| [Demo.Inbox.Api](Demo.Inbox.Api/README.md) | 5106 | 分布式/Inbox | Transactional Inbox |
+| [Demo.MqConsumer.Api](Demo.MqConsumer.Api/README.md) | 5107 | 分布式/消息消费 | ACK / 重试 / DLQ |
+| [Demo.Saga.Api](Demo.Saga.Api/README.md) | 5108 | 分布式/Saga | 编排式补偿 |
+| [Demo.RateLimit.Api](Demo.RateLimit.Api/README.md) | 5109 | 弹性/限流 | 固定 / 滑动窗口 |
+| [Demo.Retry.Api](Demo.Retry.Api/README.md) | 5110 | 弹性/重试 | 指数退避 |
+| [Demo.CircuitBreaker.Api](Demo.CircuitBreaker.Api/README.md) | 5111 | 弹性/熔断 | 开/半开/关 |
+| [Demo.ShortUrl.Api](Demo.ShortUrl.Api/README.md) | 5112 | 缓存/短网址 | 短链跳转 |
+| [Demo.Redis.Api](Demo.Redis.Api/README.md) | 5113 | 缓存/Redis缓存 | Cache-Aside（内存模拟） |
+| [Demo.CacheProblems.Api](Demo.CacheProblems.Api/README.md) | 5114 | 缓存/缓存三大问题 | 穿透 / 击穿 / 雪崩 |
+| [Demo.Seckill.Api](Demo.Seckill.Api/README.md) | 5115 | 缓存/秒杀 | 预扣 + 异步建单 |
+| [Demo.PasswordAuth.Api](Demo.PasswordAuth.Api/README.md) | 5116 | 认证/密码认证 | PBKDF2 加盐哈希 |
+| [Demo.JwtAuth.Api](Demo.JwtAuth.Api/README.md) | 5117 | 认证/JWT | Access + Refresh |
+| [Demo.QrLogin.Api](Demo.QrLogin.Api/README.md) | 5118 | 认证/扫码登录 | Ticket 状态机 Mock |
+| [Demo.Sso.Api](Demo.Sso.Api/README.md) | 5119 | 认证/单点登录 | 简化 CAS Ticket |
+| [Demo.OptimisticLock.Api](Demo.OptimisticLock.Api/README.md) | 5120 | 存储/乐观锁 | 版本号 CAS |
+| [Demo.DistributedLock.Api](Demo.DistributedLock.Api/README.md) | 5121 | 存储/分布式锁 | SET NX EX（内存） |
+| [Demo.OrderTimeout.Api](Demo.OrderTimeout.Api/README.md) | 5122 | 支付/超时关单 | 关单 vs 支付竞态 |
+| [Demo.Payment.Api](Demo.Payment.Api/README.md) | 5123 | 支付相关 | HMAC 回调幂等入账 |
+| [Demo.DiLifetime.Api](Demo.DiLifetime.Api/README.md) | 5124 | CSharp/DI生命周期 | 三种生命周期对比 |
+| [Demo.I18n.Api](Demo.I18n.Api/README.md) | 5125 | CSharp/国际化 | 消息本地化 + 数据国际化 |
+| [Demo.Configuration.Api](Demo.Configuration.Api/README.md) | 5126 | CSharp/配置 | 环境分层加载 / 覆盖优先级 / Options 校验 |
+| [Demo.AsyncAwait.Console](Demo.AsyncAwait.Console/README.md) | — | CSharp/async与await | 并发与取消 |
+| [Demo.Linq.Console](Demo.Linq.Console/README.md) | — | CSharp/LINQ | 常用算子演示 |
+| [Demo.Delegates.Console](Demo.Delegates.Console/README.md) | — | CSharp/委托 | 委托 / 事件 / 多播 |
+| [Demo.Algorithms.Tests](Demo.Algorithms.Tests/README.md) | — | 算法/* | 双指针 / 链表 / 二叉树 |
 
 理论向笔记（CAP/BASE、选型对比、MySQL 索引原理等）不单独建可运行服务，相关点分散在上述 Demo 与注释中。
 

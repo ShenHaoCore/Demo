@@ -24,17 +24,11 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: 还原并构建全部项目
-        shell: bash
-        run: |
-          set -e
-          find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' | while read -r proj; do
-            echo "==> 构建 $proj"
-            dotnet build "$proj" -c Release --nologo
-          done
+      - name: 构建解决方案（全部 30 个项目）
+        run: dotnet build Demo.sln -c Release --nologo
 
       - name: 运行测试
-        run: dotnet test Demo.Algorithms.Tests/Demo.Algorithms.Tests.csproj -c Release --no-build --nologo
+        run: dotnet test Demo.sln -c Release --no-build --nologo
 
   format-check:
     name: 风格检查
@@ -49,14 +43,8 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: dotnet format 校验全部项目
-        shell: bash
-        run: |
-          set -e
-          find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' | while read -r proj; do
-            echo "==> 校验 $proj"
-            dotnet format "$proj" --verify-no-changes
-          done
+      - name: dotnet format 校验解决方案
+        run: dotnet format Demo.sln --verify-no-changes
 
   vulnerable-packages:
     name: 依赖漏洞检查
@@ -71,25 +59,14 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: 还原全部项目
-        shell: bash
-        run: |
-          set -e
-          find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' | while read -r proj; do
-            dotnet restore "$proj" --nologo
-          done
-
       - name: 检查直接与传递依赖的已知漏洞
         shell: bash
         run: |
           set -e
           # 有漏洞时 dotnet list package --vulnerable 退出码非 0（SDK 8+ 行为）；
           # 再按输出兜底扫一遍 High/Critical 关键字，双保险
-          find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' | while read -r proj; do
-            echo "==> 检查 $proj"
-            out=$(dotnet list "$proj" package --vulnerable --include-transitive 2>&1) \
-              || { echo "$out"; exit 1; }
-            echo "$out" | grep -E 'Severity:\s*(High|Critical)' && {
-              echo "发现 High/Critical 级别已知漏洞"; exit 1;
-            } || true
-          done
+          out=$(dotnet list Demo.sln package --vulnerable --include-transitive 2>&1) \
+            || { echo "$out"; exit 1; }
+          echo "$out" | grep -E 'Severity:\s*(High|Critical)' && {
+            echo "发现 High/Critical 级别已知漏洞"; exit 1;
+          } || true

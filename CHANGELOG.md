@@ -7,9 +7,15 @@
 ## [未发布]
 
 ### 新增
+- 根级 `Demo.sln` 聚合 30 个项目，CI 全部门禁改用解决方案单命令执行
+- PR 模板（Summary / Test plan 结构）
+- 根 README 项目一览表直链各项目 README
 - Git Flow 分支管理：`develop` 集成主干 + `release` / `hotfix` 双合，Rulesets 保护 `master` / `develop` / `v*` tag
 - 工程基建：MIT LICENSE、`global.json` 锁定 SDK feature band、`Directory.Build.props` 集中编译属性、中央包管理（`Directory.Packages.props`）、`.editorconfig`
 - CI 新增门禁：风格检查（`dotnet format --verify-no-changes`）、依赖漏洞检查（`dotnet list package --vulnerable`，High/Critical 拦截）
 - Dependabot 每周检查 NuGet 包与 GitHub Actions 版本
 - 30 个项目补齐独立 README（对应笔记 / 核心机制 / 关键文件 / 运行 / 笔记要点）
 - 修正脚手架残留的 `.http` 文件（端口与路由对齐真实代码）
+
+### 变更
+- Microsoft 9.0.x 系列包补丁对齐到 9.0.22（JwtBearer 9.0.0 → 9.0.22、EF Core Sqlite 9.0.8 → 9.0.22、OpenApi 9.0.19 → 9.0.22）
