@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/ShenHaoCore/Demo/actions/workflows/ci.yml/badge.svg)](https://github.com/ShenHaoCore/Demo/actions/workflows/ci.yml)
 [![Release](https://github.com/ShenHaoCore/Demo/actions/workflows/release.yml/badge.svg)](https://github.com/ShenHaoCore/Demo/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 基于 `haonotes` 面试笔记的 **C# 独立 Demo 集合**。命名风格参考原仓库 `E:\Repos\Demo1`（`Demo.{主题}.Api`），但：
 
@@ -67,7 +68,8 @@ Development 下访问 Scalar：`http://localhost:{端口}/scalar`
 
 ## 约定
 
-- 目标框架：`net9.0`
+- 目标框架：`net9.0`；SDK 由 [global.json](global.json) 锁定，编译属性集中在 [Directory.Build.props](Directory.Build.props)，包版本集中在 [Directory.Packages.props](Directory.Packages.props)
+- 代码风格：`.editorconfig` + CI `dotnet format` 门禁；依赖漏洞由 CI 拦截 High/Critical
 - 应持久化的状态：各项目以进程内内存为主（教学简化）；需要持久化时可改为独立 SQLite，互不共享
 - 日志与错误信息：简体中文
 - Scalar API 文档：默认浅色模式（`WithDarkMode(false)`）

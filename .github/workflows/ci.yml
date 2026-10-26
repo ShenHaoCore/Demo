@@ -35,3 +35,76 @@ jobs:
 
       - name: 运行测试
         run: dotnet test Demo.Algorithms.Tests/Demo.Algorithms.Tests.csproj -c Release --no-build --nologo
+
+  format-check:
+    name: 风格检查
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+
+      - name: 安装 .NET 9 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: dotnet format 校验全部项目
+        shell: bash
+        run: |
+          set -e
+          find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' | while read -r proj; do
+            echo "==> 校验 $proj"
+            dotnet format "$proj" --verify-no-changes --nologo
+          done
+
+  vulnerable-packages:
+    name: 依赖漏洞检查
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+
+      - name: 安装 .NET 9 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: 还原全部项目
+        shell: bash
+        run: |
+          set -e
+          find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' | while read -r proj; do
+            dotnet restore "$proj" --nologo
+          done
+
+      - name: 检查直接与传递依赖的已知漏洞
+        shell: bash
+        run: |
+          set -e
+          cat > /tmp/check_vuln.py <<'PY'
+          import json, sys
+
+          data = json.load(sys.stdin)
+          findings = []
+          for project in data.get("projects", []):
+              for framework in project.get("frameworks") or []:
+                  packages = (framework.get("topLevelPackages") or []) + (framework.get("transitivePackages") or [])
+                  for pkg in packages:
+                      for vuln in pkg.get("vulnerabilities") or []:
+                          if vuln.get("severity") in ("High", "Critical"):
+                              findings.append(
+                                  f'{project["path"]}: {pkg["name"]} {pkg.get("resolvedVersion")}'
+                                  f' -> {vuln["severity"]} {vuln.get("advisory", "")}'
+                              )
+          if findings:
+              print("发现 High/Critical 级别已知漏洞：")
+              print("\n".join(findings))
+              sys.exit(1)
+          print("未发现 High/Critical 级别已知漏洞")
+          PY
+          find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' | while read -r proj; do
+            echo "==> 检查 $proj"
+            dotnet list "$proj" package --vulnerable --include-transitive --format json | python3 /tmp/check_vuln.py
+          done

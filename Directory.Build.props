@@ -1,0 +1,24 @@
+<Project>
+
+  <!--
+    全仓库共用的编译设置（30 个项目逐份声明 → 这里单点定义）。
+    注意：TargetFramework 在这里统一定义，单个 csproj 不再重复声明；
+    包版本集中在 Directory.Packages.props（CPM），单个 csproj 不再写 Version。
+  -->
+  <PropertyGroup>
+    <!--
+      目标框架 net9.0：与 global.json 锁定的 SDK 9.0 feature band 匹配；
+      升 TFM 时记得一并核对 global.json 与 LangVersion。
+    -->
+    <TargetFramework>net9.0</TargetFramework>
+    <!-- net9.0 的默认语言版本是 C# 13 —— 显式写出，让"框架版本 → 语言版本"对应关系一眼可见 -->
+    <LangVersion>13.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- 中央包管理：所有 PackageReference 的版本统一在 Directory.Packages.props 维护 -->
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- 代码风格与格式由 .editorconfig + CI 的 dotnet format 门禁保证 -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+</Project>

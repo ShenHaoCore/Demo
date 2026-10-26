@@ -1,0 +1,16 @@
+# 行尾与二进制：仓库内统一 LF，避免 Windows/Linux 协作时的行尾漂移
+* text=auto
+
+*.cs text
+*.csproj text
+*.props text
+*.sln text
+*.md text
+*.json text
+*.yml text
+*.yaml text
+*.http text
+
+*.png binary
+*.jpg binary
+*.ico binary
