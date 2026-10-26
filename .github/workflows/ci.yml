@@ -59,6 +59,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: 还原解决方案
+        run: dotnet restore Demo.sln --nologo
+
       - name: 检查直接与传递依赖的已知漏洞
         shell: bash
         run: |
