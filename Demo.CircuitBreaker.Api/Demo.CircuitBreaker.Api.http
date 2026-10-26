@@ -1,6 +1,30 @@
-@Demo.CircuitBreaker.Api_HostAddress = http://localhost:5233
+@Demo.CircuitBreaker.Api_HostAddress = http://localhost:5111
 
-GET {{Demo.CircuitBreaker.Api_HostAddress}}/weatherforecast/
+### 经熔断器调用下游（连续失败 3 次跳闸，Open 期间返回 503 + 熔断器状态）
+GET {{Demo.CircuitBreaker.Api_HostAddress}}/api/call
 Accept: application/json
 
+### 查看熔断器状态（state / consecutiveFailures / rejectedCalls 等）
+GET {{Demo.CircuitBreaker.Api_HostAddress}}/api/breaker
+Accept: application/json
+
+### 手动重置熔断器为 Closed
+POST {{Demo.CircuitBreaker.Api_HostAddress}}/api/breaker/reset
+Accept: application/json
+
+### 直连下游（默认 ForceFail = true，返回 503）
+GET {{Demo.CircuitBreaker.Api_HostAddress}}/api/downstream
+Accept: application/json
+
+### 配置下游：关闭强制失败（等 Open 10 秒到期后半开探测恢复）
+POST {{Demo.CircuitBreaker.Api_HostAddress}}/api/downstream/config
+Content-Type: application/json
+Accept: application/json
+
+{
+  "forceFail": false
+}
+
 ###
+GET {{Demo.CircuitBreaker.Api_HostAddress}}/health
+Accept: application/json

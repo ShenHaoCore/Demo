@@ -1,6 +1,29 @@
-@Demo.JwtAuth.Api_HostAddress = http://localhost:5233
+@Demo.JwtAuth.Api_HostAddress = http://localhost:5117
 
-GET {{Demo.JwtAuth.Api_HostAddress}}/weatherforecast/
+### 健康检查
+GET {{Demo.JwtAuth.Api_HostAddress}}/health
 Accept: application/json
 
-###
+### 登录（演示：任意非空用户名密码均可；返回 accessToken + refreshToken）
+POST {{Demo.JwtAuth.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "alice",
+  "password": "x"
+}
+
+### 刷新（把 <refreshToken> 替换为登录返回的 refreshToken；旧值一次性轮换，重放返回 401）
+POST {{Demo.JwtAuth.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+Accept: application/json
+
+{
+  "refreshToken": "<refreshToken>"
+}
+
+### 当前用户（把 <accessToken> 替换为登录返回的 accessToken）
+GET {{Demo.JwtAuth.Api_HostAddress}}/api/me
+Accept: application/json
+Authorization: Bearer <accessToken>

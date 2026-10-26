@@ -1,6 +1,37 @@
-@Demo.DistributedLock.Api_HostAddress = http://localhost:5071
+@Demo.DistributedLock.Api_HostAddress = http://localhost:5121
 
-GET {{Demo.DistributedLock.Api_HostAddress}}/weatherforecast/
+### 健康检查
+GET {{Demo.DistributedLock.Api_HostAddress}}/health
 Accept: application/json
 
-###
+### 加锁（模拟 SET NX EX；ttl 默认 10 秒，1-300；重复加锁返回 409，复制返回的 token）
+POST {{Demo.DistributedLock.Api_HostAddress}}/api/locks/order-1/acquire
+Content-Type: application/json
+Accept: application/json
+
+{
+  "ttlSeconds": 10
+}
+
+### 查看锁状态（仅回 token 前 8 位）
+GET {{Demo.DistributedLock.Api_HostAddress}}/api/locks/order-1
+Accept: application/json
+
+### 解锁（把 <token> 替换为加锁返回值；错误 token 返回 409，锁不存在返回 404）
+POST {{Demo.DistributedLock.Api_HostAddress}}/api/locks/order-1/release
+Content-Type: application/json
+Accept: application/json
+
+{
+  "token": "<token>"
+}
+
+### 持锁执行临界区（抢不到锁返回 409；workMs 10-5000，ttlSeconds 1-60，执行完自动释放）
+POST {{Demo.DistributedLock.Api_HostAddress}}/api/critical/order-1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "workMs": 1000,
+  "ttlSeconds": 5
+}

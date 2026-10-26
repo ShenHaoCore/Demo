@@ -1,6 +1,50 @@
-@Demo.Saga.Api_HostAddress = http://localhost:5213
+@Demo.Saga.Api_HostAddress = http://localhost:5108
 
-GET {{Demo.Saga.Api_HostAddress}}/weatherforecast/
+### 全部成功（返回 201，trip.Status = Completed）
+POST {{Demo.Saga.Api_HostAddress}}/api/trips
+Content-Type: application/json
 Accept: application/json
 
+{
+  "destination": "东京",
+  "traveler": "张三"
+}
+
+### 租车失败（返回 409，Compensated：机票与酒店已逆序补偿）
+POST {{Demo.Saga.Api_HostAddress}}/api/trips?failCar=true
+Content-Type: application/json
+Accept: application/json
+
+{
+  "destination": "东京"
+}
+
+### 第一步失败（返回 409，Failed 且无可补偿：订酒店、租车均为 Skipped）
+POST {{Demo.Saga.Api_HostAddress}}/api/trips?failFlight=true
+Content-Type: application/json
+Accept: application/json
+
+{
+  "destination": "东京"
+}
+
+### 行程列表（按创建时间倒序）
+GET {{Demo.Saga.Api_HostAddress}}/api/trips
+Accept: application/json
+
+### 行程详情（把 <id> 替换为创建时返回的 Trip Id，查看每步状态与明细）
+GET {{Demo.Saga.Api_HostAddress}}/api/trips/<id>
+Accept: application/json
+
+### destination 为空（返回 400）
+POST {{Demo.Saga.Api_HostAddress}}/api/trips
+Content-Type: application/json
+Accept: application/json
+
+{
+  "destination": ""
+}
+
 ###
+GET {{Demo.Saga.Api_HostAddress}}/health
+Accept: application/json

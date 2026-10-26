@@ -1,6 +1,56 @@
-@Demo.Rest.Api_HostAddress = http://localhost:5284
+@Demo.Rest.Api_HostAddress = http://localhost:5101
 
-GET {{Demo.Rest.Api_HostAddress}}/weatherforecast/
+### 创建订单（返回 201 与 Location 响应头；记下响应里的 id 供下面使用）
+POST {{Demo.Rest.Api_HostAddress}}/api/orders
+Content-Type: application/json
 Accept: application/json
 
+{
+  "customerName": "张三",
+  "amount": 99.9
+}
+
+### 列表
+GET {{Demo.Rest.Api_HostAddress}}/api/orders
+Accept: application/json
+
+### 详情（把 <id> 替换为创建时返回的订单 Id；不存在返回 404）
+GET {{Demo.Rest.Api_HostAddress}}/api/orders/<id>
+Accept: application/json
+
+### 全量更新（PUT：customerName / amount / status 三个字段全部必填）
+PUT {{Demo.Rest.Api_HostAddress}}/api/orders/<id>
+Content-Type: application/json
+Accept: application/json
+
+{
+  "customerName": "张三",
+  "amount": 199.9,
+  "status": "Paid"
+}
+
+### 部分更新（PATCH：只传需要修改的字段，null 表示不修改）
+PATCH {{Demo.Rest.Api_HostAddress}}/api/orders/<id>
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "Cancelled"
+}
+
+### 删除（成功返回 204；对同一 id 再发一次返回 404）
+DELETE {{Demo.Rest.Api_HostAddress}}/api/orders/<id>
+
+### 校验失败示例（金额必须大于 0，返回 400）
+POST {{Demo.Rest.Api_HostAddress}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+  "customerName": "李四",
+  "amount": 0
+}
+
 ###
+GET {{Demo.Rest.Api_HostAddress}}/health
+Accept: application/json

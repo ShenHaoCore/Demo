@@ -1,6 +1,42 @@
-@Demo.MqConsumer.Api_HostAddress = http://localhost:5191
+@Demo.MqConsumer.Api_HostAddress = http://localhost:5107
 
-GET {{Demo.MqConsumer.Api_HostAddress}}/weatherforecast/
+### 发布消息：第 1 次处理失败，重试后第 2 次成功
+POST {{Demo.MqConsumer.Api_HostAddress}}/api/messages
+Content-Type: application/json
 Accept: application/json
 
+{
+  "payload": "hello",
+  "failUntilAttempt": 1
+}
+
+### 发布毒消息：每次都失败，3 次尝试（含首次）后进死信队列
+POST {{Demo.MqConsumer.Api_HostAddress}}/api/messages
+Content-Type: application/json
+Accept: application/json
+
+{
+  "payload": "poison",
+  "failUntilAttempt": 99
+}
+
+### 查看队列快照（readyOrProcessing / succeeded 与最大尝试次数说明）
+GET {{Demo.MqConsumer.Api_HostAddress}}/api/queue
+Accept: application/json
+
+### 查看死信队列
+GET {{Demo.MqConsumer.Api_HostAddress}}/api/dlq
+Accept: application/json
+
+### payload 为空（返回 400）
+POST {{Demo.MqConsumer.Api_HostAddress}}/api/messages
+Content-Type: application/json
+Accept: application/json
+
+{
+  "payload": ""
+}
+
 ###
+GET {{Demo.MqConsumer.Api_HostAddress}}/health
+Accept: application/json

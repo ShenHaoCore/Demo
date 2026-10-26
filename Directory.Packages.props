@@ -1,0 +1,33 @@
+<Project>
+
+  <!--
+    中央包版本（CPM）：单个 csproj 的 PackageReference 只写 Include，不写 Version。
+    升级包版本只改这里，避免 30 份副本漂移。
+  -->
+
+  <ItemGroup>
+    <!-- Api 项目通用（Microsoft 9.0.x 系列补丁统一对齐到 9.0.22） -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.22" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.4.18" />
+
+    <!-- API 版本化 -->
+    <PackageVersion Include="Asp.Versioning.Mvc" Version="8.1.0" />
+    <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
+
+    <!-- 认证 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.22" />
+
+    <!-- 存储 -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.22" />
+
+    <!-- 弹性 -->
+    <PackageVersion Include="Polly.Core" Version="8.7.0" />
+
+    <!-- 测试 -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+  </ItemGroup>
+
+</Project>

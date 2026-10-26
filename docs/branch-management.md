@@ -1,6 +1,6 @@
 # 分支管理速览
 
-> 本文是速查版：怎么用。分支模型与 AuthHub 保持一致（Git Flow），仅按本仓库现实做两处调整：主干沿用 `master`（CI 与徽章均基于它，不改名）；`v*` tag 推送后由 CI 自动构建产物并挂到 GitHub Release，无需手工建 Release。
+> 本文是速查版：怎么用。分支模型为 Git Flow，仅按本仓库现实做两处调整：主干沿用 `master`（CI 与徽章均基于它，不改名）；`v*` tag 推送后由 CI 自动构建产物并挂到 GitHub Release，无需手工建 Release。
 
 ## 分支模型（Git Flow）
 
@@ -17,6 +17,11 @@
 ## 全景图
 
 ```mermaid
+---
+config:
+  gitGraph:
+    mainBranchName: master
+---
 gitGraph
     commit id: "init"
     branch "develop"
@@ -110,8 +115,8 @@ git switch -c hotfix/1.1.1
 
 | 目标 | 规则 |
 |---|---|
-| `master` | 禁删除、禁 force push、仅限 PR 合入；必需检查：构建与测试 |
-| `develop` | 同上；必需检查：构建与测试 |
+| `master` | 禁删除、禁 force push、仅限 PR 合入；必需检查：构建与测试、风格检查、依赖漏洞检查 |
+| `develop` | 同上；必需检查：构建与测试、风格检查、依赖漏洞检查 |
 | `v*` tag | 禁删除、禁改写 |
 
 ## 红线

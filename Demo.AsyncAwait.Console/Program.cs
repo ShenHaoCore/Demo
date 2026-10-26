@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 Console.WriteLine("=== Demo.AsyncAwait.Console：异步编程演示 ===\n");

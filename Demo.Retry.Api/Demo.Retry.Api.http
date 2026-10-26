@@ -1,6 +1,26 @@
-@Demo.Retry.Api_HostAddress = http://localhost:5086
+@Demo.Retry.Api_HostAddress = http://localhost:5110
 
-GET {{Demo.Retry.Api_HostAddress}}/weatherforecast/
+### 直连不稳定下游（默认失败率 0.7，失败返回 503）
+GET {{Demo.Retry.Api_HostAddress}}/api/unstable
+Accept: application/json
+
+### 直连并临时调低失败率（仅本次调用生效）
+GET {{Demo.Retry.Api_HostAddress}}/api/unstable?rate=0.3
+Accept: application/json
+
+### 配置接口：设置失败率（0 到 1）
+POST {{Demo.Retry.Api_HostAddress}}/api/unstable/config
+Content-Type: application/json
+Accept: application/json
+
+{
+  "failureRate": 0.5
+}
+
+### 经重试管道代理调用（最多 4 次重试，指数退避，响应带 attempts）
+GET {{Demo.Retry.Api_HostAddress}}/api/proxy
 Accept: application/json
 
 ###
+GET {{Demo.Retry.Api_HostAddress}}/health
+Accept: application/json
