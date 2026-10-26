@@ -54,7 +54,7 @@
 
 ## 分支管理
 
-采用与 [AuthHub](https://github.com/ShenHaoCore/AuthHub) 一致的 Git Flow（主干为 `master`），速查见 [docs/branch-management.md](docs/branch-management.md)。
+采用 Git Flow（主干为 `master`），速查见 [docs/branch-management.md](docs/branch-management.md)。
 
 ## 运行单个项目
 
