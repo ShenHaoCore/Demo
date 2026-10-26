@@ -51,6 +51,10 @@
 
 理论向笔记（CAP/BASE、选型对比、MySQL 索引原理等）不单独建可运行服务，相关点分散在上述 Demo 与注释中。
 
+## 分支管理
+
+采用与 [AuthHub](https://github.com/ShenHaoCore/AuthHub) 一致的 Git Flow（主干为 `master`），速查见 [docs/branch-management.md](docs/branch-management.md)。
+
 ## 运行单个项目
 
 ```bash
