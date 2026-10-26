@@ -1,6 +1,6 @@
 # Demo 仓库规格（Spec）
 
-> 依据《AI 开发流程》阶段 2（to-spec）七段模板综合而成。发布后状态：`ready-for-agent`（测试缝经确认后生效）。
+> 本规格描述仓库的目标、边界与验收口径；测试缝经确认后生效。
 
 ## Problem Statement
 
@@ -49,7 +49,7 @@
 
 ## Further Notes
 
-- **tracker 约定**：采用 GitHub Issues；triage 标签（needs-triage / needs-info / ready-for-agent / ready-for-human / wontfix）在首次真实特性进 Issue 时再建，不预造
-- **GLOSSARY / ADR**：按 AI 开发流程惰性创建——出现第一个真实的领域术语分歧或架构决策时再落 `GLOSSARY.md` 与 `docs/adr/`
-- 本 spec 的测试缝为初选（HTTP/控制台输出/xUnit 三类公开边界），经确认后按流程打 `ready-for-agent`
-- 笔记原文：haonotes《AI开发流程》（05）
+- **tracker 约定**：采用 GitHub Issues 作为工单跟踪；标签体系在首个真实特性进 Issue 时按需建立，不预造
+- **GLOSSARY / ADR**：出现第一个真实的领域术语分歧或架构决策时，再落 `GLOSSARY.md` 与 `docs/adr/`（惰性创建，不预造）
+- 本 spec 的测试缝为初选（HTTP/控制台输出/xUnit 三类公开边界），经确认后生效
+- 笔记对应关系见根 README
