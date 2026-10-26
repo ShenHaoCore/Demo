@@ -1,0 +1,30 @@
+root = true
+
+# 全仓库通用
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{csproj,props,targets}]
+indent_style = space
+indent_size = 2
+
+[*.{json,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+# C#：代码风格门禁由 CI 的 dotnet format --verify-no-changes 强制
+[*.cs]
+indent_style = space
+indent_size = 4
+csharp_style_namespace_declarations = file_scoped:error
+csharp_style_var_when_type_is_apparent = true:suggestion
+dotnet_style_readonly_field = true:suggestion
+dotnet_sort_system_directives_using_first = true
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:suggestion

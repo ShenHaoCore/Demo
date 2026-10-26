@@ -1,4 +1,4 @@
-﻿Console.OutputEncoding = System.Text.Encoding.UTF8;
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 Console.WriteLine("=== Demo.Delegates.Console：委托与事件演示 ===\n");
 
 DemoCustomDelegate();

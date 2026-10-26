@@ -1,0 +1,11 @@
+{
+  // 固定 SDK 主次版本，避免"本机 10.0.x 能编、CI 的 9.0.x 编不过"这类
+  // 只在某台机器上复现的差异。目标框架是 net9.0（见 Directory.Build.props），
+  // 因此这里锁 9.0 —— 允许在 9.0 内按 feature band 向上滚动（latestFeature），
+  // 但绝不允许跨到 10.0（那会重新引入 SDK 与 TFM 不匹配的问题）。
+  // CI（ci.yml）的 setup-dotnet 安装 9.0.x 最新版，与本文件约束一致。
+  "sdk": {
+    "version": "9.0.320",
+    "rollForward": "latestFeature"
+  }
+}
