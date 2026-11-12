@@ -1,6 +1,8 @@
-namespace Demo.Algorithms.Tests;
+using Demo.TimingWheel;
 
-public class HierarchicalTimingWheelTests
+namespace Demo.TimingWheel.Console;
+
+public class TimingWheelTests
 {
     [Fact]
     public void CalculateLevels_由精度与最大延迟反推层数()
@@ -21,12 +23,10 @@ public class HierarchicalTimingWheelTests
         var fired = 0;
         Assert.True(wheel.Schedule(50, () => fired++));
 
-        // 未到点
         now = 1_000_040;
         Assert.Equal(0, wheel.AdvanceClock(now));
         Assert.Equal(0, fired);
 
-        // 过点
         now = 1_000_060;
         Assert.True(wheel.AdvanceClock(now) >= 1);
         Assert.Equal(1, fired);
@@ -35,7 +35,6 @@ public class HierarchicalTimingWheelTests
     [Fact]
     public void Schedule_超出最细层范围仍能经上层降级到期()
     {
-        // 最细层只盖 20ms；200ms 任务先上粗层，推进后降级再到期
         long now = 2_000_000;
         using var wheel = new HierarchicalTimerWheel(
             new HierarchicalTimerWheelOptions { TickMs = 1, WheelSize = 20, NumLevels = 3 },

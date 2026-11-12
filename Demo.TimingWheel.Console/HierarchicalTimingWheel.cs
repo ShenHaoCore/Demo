@@ -1,4 +1,4 @@
-namespace Demo.Algorithms.Tests;
+namespace Demo.TimingWheel;
 
 /// <summary>
 /// 分层哈希时间轮（对照 hao_notes [[07-分层时间轮]]）。

@@ -48,8 +48,8 @@
 | [Demo.AsyncAwait.Console](Demo.AsyncAwait.Console/README.md) | — | CSharp/async与await | 并发与取消 |
 | [Demo.Linq.Console](Demo.Linq.Console/README.md) | — | CSharp/LINQ | 常用算子演示 |
 | [Demo.Delegates.Console](Demo.Delegates.Console/README.md) | — | CSharp/委托 | 委托 / 事件 / 多播 |
-| [Demo.Algorithms.Tests](Demo.Algorithms.Tests/README.md) | — | 算法/* | `dotnet test`：双指针 / 链表 / 二叉树 / 分层时间轮单测 |
-| [Demo.HierarchicalTimerWheel.Console](Demo.HierarchicalTimerWheel.Console/README.md) | — | [分层时间轮](https://github.com/ShenHaoCore/hao_notes/blob/main/程序员/知识/04-基础/算法/07-分层时间轮.md) | `dotnet run`：调度并打印到期 |
+| [Demo.Algorithms.Tests](Demo.Algorithms.Tests/README.md) | — | 算法/* | `dotnet test`：双指针 / 链表 / 二叉树 |
+| [Demo.TimingWheel.Console](Demo.TimingWheel.Console/README.md) | — | [分层时间轮](https://github.com/ShenHaoCore/hao_notes/blob/main/程序员/知识/04-基础/算法/07-分层时间轮.md) | 独立主题：`dotnet run` 演示 + `dotnet test` 单测 |
 
 理论向笔记（CAP/BASE、选型对比、MySQL 索引原理等）不单独建可运行服务，相关点分散在上述 Demo 与注释中。
 
