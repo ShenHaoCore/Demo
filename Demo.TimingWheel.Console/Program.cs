@@ -1,44 +1,41 @@
 using Demo.TimingWheel;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
-Console.WriteLine("=== Demo.TimingWheel.Console：分层时间轮 ===\n");
+Console.WriteLine("=== Demo.TimingWheel.Console ===\n");
 
-using var wheel = new HierarchicalTimerWheel(new HierarchicalTimerWheelOptions
+using var wheel = new HierarchicalTimerWheel(new()
 {
     TickMs = 1,
     WheelSize = 20,
-    NumLevels = 3
+    NumLevels = 3 // 覆盖 1×20³=8000ms
 });
 
-Console.WriteLine($"最大覆盖: {wheel.MaxDelayMs} ms（TickMs×WheelSize^NumLevels）");
-Console.WriteLine(
-    $"CalculateLevels(1, 60, 24h) = {HierarchicalTimerWheel.CalculateLevels(1, 60, 24 * 3600 * 1000L)} 层\n");
+Console.WriteLine($"MaxDelay={wheel.MaxDelayMs}ms  Levels(1,60,24h)={HierarchicalTimerWheel.CalculateLevels(1, 60, 24 * 3600 * 1000L)}\n");
 
-var fired = new List<string>();
+var fired = 0;
 var sw = System.Diagnostics.Stopwatch.StartNew();
 
 void Arm(string name, long delayMs)
 {
-    var ok = wheel.Schedule(delayMs, () =>
+    wheel.Schedule(delayMs, () =>
     {
-        fired.Add(name);
-        Console.WriteLine($"  [{sw.ElapsedMilliseconds,4} ms] {name} 到期（计划 {delayMs} ms）");
+        Interlocked.Increment(ref fired);
+        Console.WriteLine($"  [{sw.ElapsedMilliseconds,4}ms] {name}");
     });
-    Console.WriteLine(ok ? $"已调度: {name} @ {delayMs} ms" : $"调度失败: {name}");
+    Console.WriteLine($"调度 {name} @{delayMs}ms");
 }
 
-Arm("短延迟（最细层）", 80);
-Arm("跨层降级", 150);
+Arm("细层", 80);
+Arm("跨层", 150); // > WheelSize×TickMs，先上粗层再降级
 Arm("稍后", 220);
 
-Console.WriteLine("\n推进中…\n");
+Console.WriteLine("\n推进…\n");
 var until = DateTime.UtcNow.AddMilliseconds(600);
-while (DateTime.UtcNow < until && fired.Count < 3)
+while (DateTime.UtcNow < until && fired < 3)
 {
     wheel.AdvanceClock(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
     Thread.Sleep(5);
 }
 
-Console.WriteLine($"\n完成：{fired.Count}/3");
-Environment.ExitCode = fired.Count == 3 ? 0 : 1;
-Console.WriteLine(fired.Count == 3 ? "分层时间轮运行正常。" : "有任务未触发。");
+Console.WriteLine($"\n{fired}/3 {(fired == 3 ? "OK" : "FAIL")}");
+Environment.ExitCode = fired == 3 ? 0 : 1;

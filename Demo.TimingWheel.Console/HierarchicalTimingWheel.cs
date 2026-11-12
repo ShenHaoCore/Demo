@@ -1,16 +1,16 @@
 namespace Demo.TimingWheel;
 
 /// <summary>
-/// 分层哈希时间轮（对照 hao_notes [[07-分层时间轮]]）。
-/// 相对笔记初稿的可运行修正：
-/// 1) 覆盖窗口随 currentTime 滑动；
-/// 2) 先各层推进并收集，再统一经最细层重入（避免降级时细层时钟未跟上）；
-/// 3) 时钟可注入，便于单测。
+/// 分层哈希时间轮。要点：
+/// 1) 窗口随 currentTime 滑动（勿写死构造时 EndTime）；
+/// 2) 推进时粗→细先收集，再经最细层重入；
+/// 3) clock 可注入，便于单测。
+/// MaxDelay = TickMs × WheelSize^NumLevels
 /// </summary>
 public sealed class HierarchicalTimerWheel : IDisposable
 {
-    private readonly TimingWheel _root;
-    private readonly TimingWheel[] _levels; // [0]=最细 … [^1]=最粗
+    private readonly TimingWheel _root;       // 最细层，Schedule 入口
+    private readonly TimingWheel[] _levels;   // [0]=最细 … [^1]=最粗
     private readonly long _maxDelay;
     private readonly Func<long> _now;
     private readonly object _sync = new();
@@ -19,35 +19,34 @@ public sealed class HierarchicalTimerWheel : IDisposable
     public HierarchicalTimerWheel(HierarchicalTimerWheelOptions? options = null, Func<long>? clock = null)
     {
         options ??= new HierarchicalTimerWheelOptions();
-        if (options.TickMs <= 0) throw new ArgumentOutOfRangeException(nameof(options.TickMs));
-        if (options.WheelSize <= 1) throw new ArgumentOutOfRangeException(nameof(options.WheelSize));
-        if (options.NumLevels <= 0) throw new ArgumentOutOfRangeException(nameof(options.NumLevels));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.TickMs);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(options.WheelSize, 1);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.NumLevels);
 
         _now = clock ?? (() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-        var start = Align(_now(), options.TickMs);
+        var now = _now();
+        var start = now - now % options.TickMs;
 
+        // 从粗到细倒建：overflow 指向上层粗轮
         TimingWheel? overflow = null;
-        var built = new TimingWheel[options.NumLevels];
+        _levels = new TimingWheel[options.NumLevels];
         for (var i = options.NumLevels - 1; i >= 0; i--)
         {
-            var layerTick = options.TickMs * Pow(options.WheelSize, i);
-            overflow = new TimingWheel(layerTick, options.WheelSize, start, overflow);
-            built[i] = overflow;
+            var tick = options.TickMs * Pow(options.WheelSize, i);
+            overflow = new TimingWheel(tick, options.WheelSize, start, overflow);
+            _levels[i] = overflow;
         }
 
-        _levels = built;
-        _root = built[0];
+        _root = _levels[0];
         _maxDelay = options.MaxDelayMs
             ?? checked(options.TickMs * Pow(options.WheelSize, options.NumLevels));
     }
 
     public long MaxDelayMs => _maxDelay;
 
+    /// <summary>N = ceil(log(maxDelay/tick) / log(wheelSize))</summary>
     public static int CalculateLevels(long tickMs, int wheelSize, long maxDelayMs)
-    {
-        var levels = Math.Log((double)maxDelayMs / tickMs) / Math.Log(wheelSize);
-        return (int)Math.Ceiling(levels);
-    }
+        => (int)Math.Ceiling(Math.Log((double)maxDelayMs / tickMs) / Math.Log(wheelSize));
 
     public bool Schedule(long delayMs, Action callback)
     {
@@ -58,47 +57,41 @@ public sealed class HierarchicalTimerWheel : IDisposable
 
         lock (_sync)
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
             var now = _now();
-            var task = new TimerTask(now + delayMs, callback);
-            if (_root.AddTask(task, now))
+            if (_root.AddTask(new TimerTask(now + delayMs, callback), now))
                 return true;
 
-            callback();
+            callback(); // 入轮瞬间已到期
             return true;
         }
     }
 
-    /// <summary>
-    /// 推进到 nowMs：各层先吐出到期桶内任务，再统一判定执行或经最细层重入。
-    /// </summary>
+    /// <summary>推进到 nowMs：先各层吐任务，再执行或经 _root 重入。</summary>
     public int AdvanceClock(long nowMs)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        var due = new List<Action>();
+        List<Action> due;
 
         lock (_sync)
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-
             var pending = new List<TimerTask>();
-            // 粗→细推进时钟并收集；此时不重入，避免细层 currentTime 尚未跟上
             for (var i = _levels.Length - 1; i >= 0; i--)
                 pending.AddRange(_levels[i].AdvanceAndFlush(nowMs));
 
+            due = [];
             foreach (var task in pending)
             {
                 if (task.Deadline <= nowMs)
                     due.Add(task.Callback);
                 else
-                    _root.AddTask(task, nowMs); // 各层时钟已对齐到 nowMs，滑动窗口正确
+                    _root.AddTask(task, nowMs); // 时钟已对齐，可正确落细层
             }
         }
 
         foreach (var cb in due)
         {
             try { cb(); }
-            catch { /* 教学：吞掉回调异常 */ }
+            catch { /* 演示：勿打断推进 */ }
         }
 
         return due.Count;
@@ -109,45 +102,42 @@ public sealed class HierarchicalTimerWheel : IDisposable
         lock (_sync) _disposed = true;
     }
 
-    private static long Align(long ms, long tickMs) => ms - (ms % tickMs);
-
-    private static long Pow(int wheelSize, int exp)
+    private static long Pow(int baseValue, int exp)
     {
-        long result = 1;
+        long n = 1;
         for (var i = 0; i < exp; i++)
-            result = checked(result * wheelSize);
-        return result;
+            n = checked(n * baseValue);
+        return n;
     }
 }
 
 public sealed class HierarchicalTimerWheelOptions
 {
-    public long TickMs { get; set; } = 1;
-    public int WheelSize { get; set; } = 20;
-    public int NumLevels { get; set; } = 5;
-    public long? MaxDelayMs { get; set; }
+    public long TickMs { get; set; } = 1;       // 最细精度
+    public int WheelSize { get; set; } = 20;    // 每层槽数
+    public int NumLevels { get; set; } = 5;     // 层数
+    public long? MaxDelayMs { get; set; }       // 不设则按公式算
 }
 
 internal sealed class TimerTask(long deadline, Action callback)
 {
-    public long Deadline { get; } = deadline;
+    public long Deadline { get; } = deadline;   // 绝对 Unix ms
     public Action Callback { get; } = callback;
     public bool IsCancelled { get; private set; }
-    public void Cancel() => IsCancelled = true;
+    public void Cancel() => IsCancelled = true; // 惰性取消，Flush 时跳过
 }
 
 internal sealed class TimerTaskList
 {
     private readonly LinkedList<TimerTask> _tasks = new();
-    public long Expiration { get; set; } = long.MaxValue;
+    public long Expiration { get; set; } = long.MaxValue; // 整桶到期时刻；MaxValue=空
 
     public void AddTask(TimerTask task) => _tasks.AddLast(task);
 
     public List<TimerTask> Flush()
     {
         var list = new List<TimerTask>();
-        var node = _tasks.First;
-        while (node is not null)
+        for (var node = _tasks.First; node is not null;)
         {
             var next = node.Next;
             if (!node.Value.IsCancelled)
@@ -160,6 +150,7 @@ internal sealed class TimerTaskList
     }
 }
 
+/// <summary>单层轮。覆盖 [currentTime, currentTime + tick×size)。</summary>
 internal sealed class TimingWheel
 {
     private readonly int _wheelSize;
@@ -175,7 +166,7 @@ internal sealed class TimingWheel
         _wheelSize = wheelSize;
         _interval = tickMs * wheelSize;
         _overflow = overflow;
-        _currentTime = startMs - (startMs % tickMs);
+        _currentTime = startMs - startMs % tickMs;
         _buckets = new TimerTaskList[wheelSize];
         for (var i = 0; i < wheelSize; i++)
             _buckets[i] = new TimerTaskList();
@@ -183,36 +174,30 @@ internal sealed class TimingWheel
 
     public bool AddTask(TimerTask task, long nowMs)
     {
-        var deadline = task.Deadline;
-        if (deadline <= nowMs)
+        if (task.Deadline <= nowMs)
             return false;
 
-        // 滑动窗口：[currentTime, currentTime + interval)
-        if (deadline < _currentTime + _interval)
+        if (task.Deadline < _currentTime + _interval)
         {
-            var virtualId = deadline / _tickMs;
-            var slot = (int)(virtualId % _wheelSize);
+            var id = task.Deadline / _tickMs;
+            var slot = (int)(id % _wheelSize);
             _buckets[slot].AddTask(task);
             if (_buckets[slot].Expiration == long.MaxValue)
-                _buckets[slot].Expiration = virtualId * _tickMs;
+                _buckets[slot].Expiration = id * _tickMs;
             return true;
         }
 
-        return _overflow?.AddTask(task, nowMs) ?? false;
+        return _overflow?.AddTask(task, nowMs) ?? false; // 升层
     }
 
-    /// <summary>把时钟推到 nowMs，弹出沿途到期槽中的任务（不负责重入）。</summary>
+    /// <summary>只推进并吐出任务，不负责重入。</summary>
     public List<TimerTask> AdvanceAndFlush(long nowMs)
     {
         var flushed = new List<TimerTask>();
-        if (nowMs < _currentTime + _tickMs)
-            return flushed;
-
         while (_currentTime + _tickMs <= nowMs)
         {
             _currentTime += _tickMs;
-            var slot = (int)((_currentTime / _tickMs) % _wheelSize);
-            var bucket = _buckets[slot];
+            var bucket = _buckets[(int)((_currentTime / _tickMs) % _wheelSize)];
             if (bucket.Expiration > _currentTime)
                 continue;
 
