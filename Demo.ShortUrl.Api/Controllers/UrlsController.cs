@@ -9,11 +9,13 @@ namespace Demo.ShortUrl.Api.Controllers;
 public sealed class UrlsController(IShortUrlAppService shortUrlAppService) : ControllerBase
 {
     [HttpPost]
-    public ActionResult<ShortUrlCreatedDto> CreateAsync([FromBody] CreateShortUrlDto input)
+    public async Task<ActionResult<ShortUrlCreatedDto>> CreateAsync(
+        [FromBody] CreateShortUrlDto input,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var dto = shortUrlAppService.Create(input);
+            var dto = await shortUrlAppService.CreateAsync(input, cancellationToken);
             return Created($"/api/urls/{dto.Code}", dto);
         }
         catch (ArgumentException ex)
@@ -23,9 +25,9 @@ public sealed class UrlsController(IShortUrlAppService shortUrlAppService) : Con
     }
 
     [HttpGet("{code}")]
-    public ActionResult<ShortUrlDto> GetAsync(string code)
+    public async Task<ActionResult<ShortUrlDto>> GetAsync(string code, CancellationToken cancellationToken)
     {
-        var dto = shortUrlAppService.Get(code);
+        var dto = await shortUrlAppService.GetAsync(code, cancellationToken);
         if (dto is null)
         {
             return NotFound(new { message = "短码不存在", code });

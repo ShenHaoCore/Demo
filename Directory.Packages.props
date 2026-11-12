@@ -19,6 +19,10 @@
 
     <!-- 存储 -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.22" />
+    <PackageVersion Include="StackExchange.Redis" Version="2.8.31" />
+
+    <!-- 消息 -->
+    <PackageVersion Include="RabbitMQ.Client" Version="6.8.1" />
 
     <!-- 弹性 -->
     <PackageVersion Include="Polly.Core" Version="8.7.0" />

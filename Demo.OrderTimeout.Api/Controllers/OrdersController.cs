@@ -9,9 +9,11 @@ namespace Demo.OrderTimeout.Api.Controllers;
 [Route("api/orders")]
 public sealed class OrdersController(IOrderAppService orderAppService) : ControllerBase
 {
+    private const int DefaultTimeoutSeconds = 30 * 60;
+
     [HttpPost]
     [EndpointName("CreateOrder")]
-    [EndpointSummary("创建待支付订单（可调 timeoutSeconds）")]
+    [EndpointSummary("创建待支付订单；默认 30 分钟关单（TimingWheel / Redis ZSET / RabbitMq DLX，可传 timeoutSeconds 缩短演示）")]
     public IActionResult CreateAsync([FromBody] CreateOrderDto input)
     {
         if (input is null || string.IsNullOrWhiteSpace(input.Product) || input.Amount <= 0)
@@ -19,11 +21,11 @@ public sealed class OrdersController(IOrderAppService orderAppService) : Control
             return BadRequest(new { message = "请提供 product 与 amount（>0）" });
         }
 
-        // 默认可调短超时便于演示（秒）
-        var timeoutSeconds = input.TimeoutSeconds is > 0 ? input.TimeoutSeconds.Value : 15;
-        timeoutSeconds = Math.Clamp(timeoutSeconds, 3, 3600);
+        var timeoutSeconds = input.TimeoutSeconds is > 0 ? input.TimeoutSeconds.Value : DefaultTimeoutSeconds;
+        timeoutSeconds = Math.Clamp(timeoutSeconds, 3, 24 * 60 * 60);
 
         var order = orderAppService.Create(input.Product.Trim(), input.Amount, TimeSpan.FromSeconds(timeoutSeconds));
+        var provider = orderAppService.SchedulerProvider;
         return Created($"/api/orders/{order.Id}", new
         {
             id = order.Id,
@@ -33,7 +35,8 @@ public sealed class OrdersController(IOrderAppService orderAppService) : Control
             createdAt = order.CreatedAt,
             expireAt = order.ExpireAt,
             timeoutSeconds,
-            message = "待支付订单已创建，超时将自动关单"
+            scheduler = provider,
+            message = $"待支付订单已创建，到期由 {provider} 触发关单"
         });
     }
 
@@ -52,7 +55,7 @@ public sealed class OrdersController(IOrderAppService orderAppService) : Control
 
     [HttpPost("{id:guid}/pay")]
     [EndpointName("PayOrder")]
-    [EndpointSummary("支付订单；与关单用状态 CAS 竞态")]
+    [EndpointSummary("支付订单；成功后取消超时任务；与关单用状态 CAS 竞态")]
     public IActionResult PayAsync(Guid id)
     {
         var result = orderAppService.TryPay(id);
@@ -67,7 +70,7 @@ public sealed class OrdersController(IOrderAppService orderAppService) : Control
             }),
             TransitionStatus.Success => Ok(new
             {
-                message = "支付成功（CAS：Pending -> Paid）",
+                message = $"支付成功（CAS：Pending -> Paid，并取消 {orderAppService.SchedulerProvider} 超时任务）",
                 order = ToDto(result.Order!)
             }),
             _ => StatusCode(500)
@@ -76,7 +79,7 @@ public sealed class OrdersController(IOrderAppService orderAppService) : Control
 
     [HttpPost("{id:guid}/close")]
     [EndpointName("CloseOrder")]
-    [EndpointSummary("手动关单（同样使用 CAS）")]
+    [EndpointSummary("手动关单（同样使用 CAS，并取消超时任务）")]
     public IActionResult CloseAsync(Guid id)
     {
         var result = orderAppService.TryClose(id, "手动关单");

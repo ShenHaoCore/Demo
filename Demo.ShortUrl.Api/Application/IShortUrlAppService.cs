@@ -6,10 +6,10 @@ namespace Demo.ShortUrl.Api.Application;
 public interface IShortUrlAppService
 {
     /// <exception cref="ArgumentException">输入校验失败。</exception>
-    ShortUrlCreatedDto Create(CreateShortUrlDto input);
+    Task<ShortUrlCreatedDto> CreateAsync(CreateShortUrlDto input, CancellationToken cancellationToken = default);
 
-    ShortUrlDto? Get(string code);
+    Task<ShortUrlDto?> GetAsync(string code, CancellationToken cancellationToken = default);
 
     /// <returns>跳转目标 URL；null 表示不存在。</returns>
-    string? RedirectAndIncrement(string code);
+    Task<string?> RedirectAndIncrementAsync(string code, CancellationToken cancellationToken = default);
 }

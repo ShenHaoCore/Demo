@@ -1,6 +1,10 @@
 @Demo.ShortUrl.Api_HostAddress = http://localhost:5112
 
-### 创建短链（返回 code 与 shortPath，记下 code 供后续请求使用）
+### 健康检查（store=Memory|Redis）
+GET {{Demo.ShortUrl.Api_HostAddress}}/health
+Accept: application/json
+
+### 创建短链（发号机 + Base62；返回 code 与 shortPath）
 POST {{Demo.ShortUrl.Api_HostAddress}}/api/urls
 Content-Type: application/json
 Accept: application/json
@@ -9,13 +13,13 @@ Accept: application/json
   "longUrl": "https://learn.microsoft.com/dotnet"
 }
 
-### 查询短链详情与访问计数（把 {code} 换成上一步返回的 code）
+### 查询短链详情与访问计数（把 code 换成上一步返回值）
 GET {{Demo.ShortUrl.Api_HostAddress}}/api/urls/{code}
 Accept: application/json
 
-### 302 跳转到原始地址（根路由，VisitCount 自增）
+### 302 跳转到原始地址（根路由，VisitCount 自增 / Redis INCR）
 GET {{Demo.ShortUrl.Api_HostAddress}}/{code}
 
 ###
-GET {{Demo.ShortUrl.Api_HostAddress}}/health
-Accept: application/json
+# 生产：appsettings 中 ShortUrl:Provider=Redis，并启动 Redis（localhost:6379）
+# docker run -d --name redis -p 6379:6379 redis:7
