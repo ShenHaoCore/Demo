@@ -1,36 +1,29 @@
-using Demo.OrderTimeout.Api.Application;
-using Demo.OrderTimeout.Api.Dtos;
-using Demo.OrderTimeout.Api.Entities;
-
 namespace Demo.OrderTimeout.Api.Services;
 
-/// <summary>订单超时关单后台服务（基础设施）。</summary>
-public sealed class OrderTimeoutService(IOrderAppService orderAppService, ILogger<OrderTimeoutService> logger)
-    : BackgroundService
+/// <summary>按 tick 推进哈希时间轮，驱动到期关单。</summary>
+public sealed class OrderTimeoutService(
+    HashedTimingWheel timingWheel,
+    ILogger<OrderTimeoutService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        logger.LogInformation(
+            "订单超时时间轮已启动：tick={Tick}，wheelSize={Size}（一圈 {RoundSeconds}s）",
+            timingWheel.TickDuration,
+            timingWheel.WheelSize,
+            timingWheel.TickDuration.TotalSeconds * timingWheel.WheelSize);
+
         while (!stoppingToken.IsCancellationRequested)
         {
-            var now = DateTimeOffset.UtcNow;
-            foreach (var order in orderAppService.Snapshot())
+            try
             {
-                if (order.Status == OrderStatus.Pending && order.ExpireAt <= now)
-                {
-                    var result = orderAppService.TryClose(order.Id, "超时自动关单");
-                    if (result.Status == TransitionStatus.Success)
-                    {
-                        logger.LogInformation("订单 {OrderId} 已超时关单", order.Id);
-                    }
-                    else if (result.Status == TransitionStatus.Conflict)
-                    {
-                        logger.LogInformation("订单 {OrderId} 关单与支付竞态：当前状态 {Status}",
-                            order.Id, result.Order?.Status);
-                    }
-                }
+                await Task.Delay(timingWheel.TickDuration, stoppingToken);
+                timingWheel.AdvanceClock();
             }
-
-            await Task.Delay(500, stoppingToken);
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
         }
     }
 }

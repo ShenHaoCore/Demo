@@ -1,6 +1,10 @@
 @Demo.OrderTimeout.Api_HostAddress = http://localhost:5122
 
-### 创建待支付订单（timeoutSeconds 可调 3-3600，默认 15；调到 3 秒便于观察竞态）
+### 健康检查（含当前调度实现 TimingWheel / Redis / RabbitMq）
+GET {{Demo.OrderTimeout.Api_HostAddress}}/health
+Accept: application/json
+
+### 创建待支付订单（timeoutSeconds 可调；调到 5 秒便于观察竞态）
 POST {{Demo.OrderTimeout.Api_HostAddress}}/api/orders
 Content-Type: application/json
 Accept: application/json
@@ -15,17 +19,14 @@ Accept: application/json
 GET {{Demo.OrderTimeout.Api_HostAddress}}/api/orders/00000000-0000-0000-0000-000000000001
 Accept: application/json
 
-### 支付订单（CAS：Pending -> Paid）；超时后调用返回 409，currentStatus 为 Closed
+### 支付订单（CAS：Pending -> Paid）；超时后调用返回 409
 POST {{Demo.OrderTimeout.Api_HostAddress}}/api/orders/00000000-0000-0000-0000-000000000001/pay
 Accept: application/json
 
-### 手动关单（同样使用 CAS）；已支付时返回 409，currentStatus 为 Paid
+### 手动关单（同样使用 CAS）；已支付时返回 409
 POST {{Demo.OrderTimeout.Api_HostAddress}}/api/orders/00000000-0000-0000-0000-000000000001/close
 Accept: application/json
 
-### 观察竞态：创建 3 秒超时订单后，在 3 秒内快速连发 pay 与 close，
-# 只有一方 Success，另一方拿到 409 + 当前状态；后台服务每 500ms 扫描一次。
-
 ###
-GET {{Demo.OrderTimeout.Api_HostAddress}}/health
-Accept: application/json
+# Provider 切换：appsettings 中 OrderTimeout:Provider = TimingWheel | Redis | RabbitMq
+# Redis：需 localhost:6379；RabbitMq：需本机 broker + 延时/DLX 配置

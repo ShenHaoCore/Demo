@@ -24,7 +24,7 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: 构建解决方案（全部 30 个项目）
+      - name: 构建解决方案（全部项目）
         run: dotnet build Demo.sln -c Release --nologo
 
       - name: 运行测试

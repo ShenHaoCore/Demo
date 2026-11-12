@@ -1,17 +1,21 @@
-using System.Collections.Concurrent;
-using System.Security.Cryptography;
 using Demo.ShortUrl.Api.Dtos;
 using Demo.ShortUrl.Api.Entities;
+using Demo.ShortUrl.Api.Options;
+using Demo.ShortUrl.Api.Services;
+using Microsoft.Extensions.Options;
 
 namespace Demo.ShortUrl.Api.Application;
 
-/// <summary>短链应用服务。</summary>
-public sealed class ShortUrlAppService : IShortUrlAppService
+/// <summary>短链应用服务：发号机 + Base62，计次走 Store INCR。</summary>
+public sealed class ShortUrlAppService(
+    IShortUrlStore store,
+    IOptions<ShortUrlOptions> options) : IShortUrlAppService
 {
-    private readonly ConcurrentDictionary<string, ShortUrlEntry> _urls = new(StringComparer.Ordinal);
-    private const string Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private readonly int _codeLength = Math.Clamp(options.Value.CodeLength, 4, 12);
 
-    public ShortUrlCreatedDto Create(CreateShortUrlDto input)
+    public async Task<ShortUrlCreatedDto> CreateAsync(
+        CreateShortUrlDto input,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(input);
         if (string.IsNullOrWhiteSpace(input.LongUrl))
@@ -25,13 +29,10 @@ public sealed class ShortUrlAppService : IShortUrlAppService
             throw new ArgumentException("longUrl 必须是有效的 http/https 绝对地址");
         }
 
-        string code;
-        ShortUrlEntry entity;
-        do
-        {
-            code = GenerateCode(7);
-            entity = new ShortUrlEntry(code, uri.ToString(), DateTimeOffset.UtcNow, 0);
-        } while (!_urls.TryAdd(code, entity));
+        var id = await store.NextIdAsync(cancellationToken).ConfigureAwait(false);
+        var code = Base62.Encode(id, _codeLength);
+        var entity = new ShortUrlEntry(code, uri.ToString(), DateTimeOffset.UtcNow, 0);
+        await store.SaveAsync(entity, cancellationToken).ConfigureAwait(false);
 
         return new ShortUrlCreatedDto
         {
@@ -40,29 +41,22 @@ public sealed class ShortUrlAppService : IShortUrlAppService
             LongUrl = entity.LongUrl,
             CreatedAt = entity.CreatedAt,
             VisitCount = entity.VisitCount,
-            Message = "短链已创建"
+            Message = $"短链已创建（{store.ProviderName} / 发号机+Base62）"
         };
     }
 
-    public ShortUrlDto? Get(string code)
+    public async Task<ShortUrlDto?> GetAsync(string code, CancellationToken cancellationToken = default)
     {
-        if (!_urls.TryGetValue(code, out var entity))
-        {
-            return null;
-        }
-
-        return MapToDto(entity);
+        var entity = await store.FindAsync(code, cancellationToken).ConfigureAwait(false);
+        return entity is null ? null : MapToDto(entity);
     }
 
-    public string? RedirectAndIncrement(string code)
+    public async Task<string?> RedirectAndIncrementAsync(
+        string code,
+        CancellationToken cancellationToken = default)
     {
-        if (!_urls.TryGetValue(code, out var entity))
-        {
-            return null;
-        }
-
-        entity.VisitCount++;
-        return entity.LongUrl;
+        var result = await store.RedirectAndIncrementAsync(code, cancellationToken).ConfigureAwait(false);
+        return result?.LongUrl;
     }
 
     private static ShortUrlDto MapToDto(ShortUrlEntry entity) => new()
@@ -72,15 +66,4 @@ public sealed class ShortUrlAppService : IShortUrlAppService
         CreatedAt = entity.CreatedAt,
         VisitCount = entity.VisitCount
     };
-
-    private static string GenerateCode(int length)
-    {
-        Span<char> chars = stackalloc char[length];
-        for (var i = 0; i < length; i++)
-        {
-            chars[i] = Alphabet[RandomNumberGenerator.GetInt32(Alphabet.Length)];
-        }
-
-        return new string(chars);
-    }
 }

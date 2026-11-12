@@ -3,5 +3,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
 </Project>
